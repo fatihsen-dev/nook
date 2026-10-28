@@ -36,6 +36,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 app_name="Nook"
+command_line_name="nookctl"
 bundle_identifier="dev.nook.manager"
 minimum_system_version="14.0"
 architectures="--arch arm64 --arch x86_64"
@@ -92,6 +93,8 @@ notarize() {
 # shellcheck disable=SC2086
 swift build -c release --product "$app_name" $architectures
 # shellcheck disable=SC2086
+swift build -c release --product "$command_line_name" $architectures
+# shellcheck disable=SC2086
 binary_directory="$(swift build -c release --product "$app_name" $architectures --show-bin-path)"
 
 mkdir -p "$output_directory"
@@ -100,6 +103,7 @@ app="$output_directory/$app_name.app"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$binary_directory/$app_name" "$app/Contents/MacOS/$app_name"
+cp "$binary_directory/$command_line_name" "$app/Contents/MacOS/$command_line_name"
 cp "design/brand/nook.icns" "$app/Contents/Resources/nook.icns"
 
 cat > "$app/Contents/Info.plist" <<PLIST
@@ -124,8 +128,9 @@ cat > "$app/Contents/Info.plist" <<PLIST
 PLIST
 plutil -lint "$app/Contents/Info.plist" >/dev/null
 
+sign "$app/Contents/MacOS/$command_line_name"
 sign "$app"
-codesign --verify --strict "$app"
+codesign --verify --strict --deep "$app"
 
 if [ "$should_notarize" = true ]; then
     ditto -c -k --keepParent "$app" "$scratch/$app_name-notarization.zip"

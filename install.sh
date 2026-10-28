@@ -4,6 +4,8 @@ set -eu
 APP_NAME="Nook"
 RELEASES_URL="${NOOK_RELEASES_URL:-https://github.com/fatihsen-dev/nook/releases/latest/download}"
 INSTALL_DIR="${NOOK_INSTALL_DIR:-$HOME/Applications}"
+BIN_DIR="${NOOK_BIN_DIR:-$HOME/.local/bin}"
+COMMAND_LINE_NAME="nookctl"
 MINIMUM_MACOS_MAJOR=14
 
 log() { printf '  %s\n' "$1"; }
@@ -51,6 +53,17 @@ main() {
     mv "${tmp}/unpacked/${APP_NAME}.app" "${INSTALL_DIR}/${APP_NAME}.app"
     xattr -dr com.apple.quarantine "${INSTALL_DIR}/${APP_NAME}.app" 2>/dev/null || true
     log "installed ${INSTALL_DIR}/${APP_NAME}.app"
+
+    command_line_tool="${INSTALL_DIR}/${APP_NAME}.app/Contents/MacOS/${COMMAND_LINE_NAME}"
+    if [ -x "$command_line_tool" ]; then
+        mkdir -p "$BIN_DIR"
+        ln -sf "$command_line_tool" "${BIN_DIR}/${COMMAND_LINE_NAME}"
+        log "linked ${BIN_DIR}/${COMMAND_LINE_NAME}"
+        case ":${PATH}:" in
+            *":${BIN_DIR}:"*) ;;
+            *) log "add ${BIN_DIR} to your PATH to run ${COMMAND_LINE_NAME}: echo 'export PATH=\"${BIN_DIR}:\$PATH\"' >> ~/.zshrc" ;;
+        esac
+    fi
 
     if ! xcrun --find swift >/dev/null 2>&1; then
         echo ""
