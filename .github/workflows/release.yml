@@ -71,8 +71,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           sh scripts/release-notes.sh "$GITHUB_REF_NAME" "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" > "$RUNNER_TEMP/release-notes.md"
+          sh scripts/release-manifest.sh "$GITHUB_REF_NAME" "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" "$RUNNER_TEMP/release-notes.md" > dist/latest.json
           gh release create "$GITHUB_REF_NAME" \
-            dist/Nook.dmg dist/Nook.dmg.sha256 dist/Nook.zip dist/Nook.zip.sha256 install.sh \
+            dist/Nook.dmg dist/Nook.dmg.sha256 dist/Nook.zip dist/Nook.zip.sha256 dist/latest.json install.sh \
             --title "Nook ${GITHUB_REF_NAME#v}" \
             --notes-file "$RUNNER_TEMP/release-notes.md"
 

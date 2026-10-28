@@ -45,10 +45,7 @@ architectures="--arch arm64 --arch x86_64"
 echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$' || { echo "invalid version: $version" >&2; exit 65; }
 # Matches an https URL
 echo "$repository_url" | grep -Eq '^https://[^[:space:]]+$' || { echo "repository URL must use https: $repository_url" >&2; exit 65; }
-# Matches a GitHub repository URL and captures owner/name
-repository_path="$(echo "$repository_url" | sed -nE 's#^https://github\.com/([^/[:space:]]+/[^/[:space:]]+)/?$#\1#p')"
-[ -n "$repository_path" ] || { echo "repository URL must be https://github.com/<owner>/<name>: $repository_url" >&2; exit 65; }
-update_feed="https://api.github.com/repos/$repository_path/releases/latest"
+update_feed="${repository_url%/}/releases/latest/download/latest.json"
 
 if [ "$should_notarize" = true ]; then
     [ -n "$signing_identity" ] || { echo "--notarize needs --sign: Apple only notarizes Developer ID signed code" >&2; exit 64; }
