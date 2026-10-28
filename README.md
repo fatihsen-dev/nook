@@ -137,14 +137,14 @@ NookKit currently provides the common plumbing needed by nooklets:
 `FloatingPanel` takes two optional arguments:
 
 ```swift
-FloatingPanel(level: .floating, position: .topTrailing) {
+FloatingPanel(level: .desktop, position: .topTrailing) {
     MyView()
 }
 ```
 
 | Argument | Values | Default |
 |---|---|---|
-| `level` | `.desktop` (below windows, on the desktop), `.normal`, `.floating` (above windows) | `.floating` |
+| `level` | `.desktop` (below windows, on the desktop), `.normal`, `.floating` (above windows) | `.desktop` |
 | `position` | `.center`, `.top`, `.bottom`, `.topLeading`, `.topTrailing`, `.bottomLeading`, `.bottomTrailing` | `.center` |
 
 Feature-specific services such as now-playing or battery data are intentionally out of scope for now: use native macOS APIs directly. The `examples/` directory and the [recipes on the website](https://nook.fatihsen.dev/#developers) (mini dock, now playing, battery, system stats, logging) show how.
