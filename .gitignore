@@ -1,0 +1,5 @@
+.build/
+.swiftpm/
+.DS_Store
+design/dock-icons/
+dist/
