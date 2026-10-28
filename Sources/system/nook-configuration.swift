@@ -9,7 +9,7 @@ let libraryFileName = "library.json"
 let logsDirectoryName = "logs"
 let binariesDirectoryName = "bin"
 let buildsDirectoryName = "builds"
-let nookKitVersionFileName = "nookkit-version"
+let nookKitSyncFileName = "nookkit-versions.json"
 let xcrunExecutable = URL(filePath: "/usr/bin/xcrun")
 let launchctlExecutable = URL(filePath: "/bin/launchctl")
 
@@ -26,7 +26,7 @@ public struct NookConfiguration: Sendable {
         let applicationSupport = try fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
         let library = try fileManager.url(for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
         return NookConfiguration(
-            nookKitDependency: try NookKitDependency.parse(nookKitPackage),
+            nookKitDependency: try NookKitDependency.parse(nookKitPackage, version: (bundleInfo[bundleVersionInfoKey] as? String).flatMap(AppVersion.init)),
             supportDirectory: applicationSupport.appending(path: supportDirectoryName),
             launchAgentsDirectory: library.appending(path: launchAgentsDirectoryName))
     }
@@ -63,12 +63,14 @@ public func makeNookletManager(configuration: NookConfiguration) -> NookletManag
         inspector: LibprocProcessInspector(),
         reportStore: JSONBuildReportStore(directory: configuration.supportDirectory.appending(path: buildsDirectoryName)),
         logsDirectory: configuration.supportDirectory.appending(path: logsDirectoryName),
-        binariesDirectory: configuration.supportDirectory.appending(path: binariesDirectoryName))
+        binariesDirectory: configuration.supportDirectory.appending(path: binariesDirectoryName),
+        kitUpdater: makeNookKitUpdater(configuration: configuration))
 }
 
-public func makeNookKitRefresher(configuration: NookConfiguration) -> NookKitRefresher {
-    NookKitRefresher(
-        manager: makeNookletManager(configuration: configuration),
+private func makeNookKitUpdater(configuration: NookConfiguration) -> NookKitUpdater? {
+    guard case .remote(let url, let version) = configuration.nookKitDependency else { return nil }
+    return NookKitUpdater(
+        url: url, version: version,
         builder: SwiftPackageBuilder(xcrun: xcrunExecutable),
-        versionStore: TextFileVersionStore(file: configuration.supportDirectory.appending(path: nookKitVersionFileName)))
+        store: JSONNookKitSyncStore(file: configuration.supportDirectory.appending(path: nookKitSyncFileName)))
 }

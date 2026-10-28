@@ -53,11 +53,14 @@ public struct NookletManager: Sendable {
     let reportStore: BuildReportStore
     let logsDirectory: URL
     let binariesDirectory: URL
+    let kitUpdater: NookKitUpdater?
 
     public init(
         store: NookletLibraryStore, builder: NookletBuilder, controller: BackgroundServiceController,
-        inspector: ProcessInspector, reportStore: BuildReportStore, logsDirectory: URL, binariesDirectory: URL
+        inspector: ProcessInspector, reportStore: BuildReportStore, logsDirectory: URL, binariesDirectory: URL,
+        kitUpdater: NookKitUpdater? = nil
     ) {
+        self.kitUpdater = kitUpdater
         self.store = store
         self.builder = builder
         self.controller = controller
@@ -85,7 +88,18 @@ public struct NookletManager: Sendable {
         try manifest.validate()
         try ensureIdentifierIsFree(id)
         try scaffoldNooklet(manifest, dependency: dependency, in: directory)
-        return try addNooklet(at: directory)
+        let nooklet = try addNooklet(at: directory)
+        try kitUpdater?.markCurrent(id)
+        return nooklet
+    }
+
+    public func isNookKitOutdated(_ nooklet: InstalledNooklet) throws -> Bool {
+        try kitUpdater?.isOutdated(nooklet) ?? false
+    }
+
+    public func updateNookKit(_ nooklet: InstalledNooklet) async throws {
+        guard let kitUpdater, try kitUpdater.isOutdated(nooklet) else { return }
+        try await kitUpdater.update(nooklet)
     }
 
     public func run(_ nooklet: InstalledNooklet) async throws -> BuildReport {
@@ -124,6 +138,7 @@ public struct NookletManager: Sendable {
     }
 
     private func buildAndRecord(_ nooklet: InstalledNooklet) async throws -> (outcome: BuildOutcome, report: BuildReport) {
+        try await updateNookKit(nooklet)
         let clock = ContinuousClock()
         let started = clock.now
         let outcome = try await builder.build(product: nooklet.manifest.product, packageDirectory: nooklet.directory)
@@ -171,6 +186,7 @@ public struct NookletManager: Sendable {
 
     private func deleteGeneratedFiles(of nooklet: InstalledNooklet) throws {
         try reportStore.delete(nookletID: nooklet.manifest.id)
+        try kitUpdater?.forget(nooklet.manifest.id)
         let fileManager = FileManager.default
         for item in [logFile(of: nooklet), binariesDirectory.appending(path: nooklet.manifest.id)] where fileManager.fileExists(atPath: item.path) {
             try fileManager.removeItem(at: item)

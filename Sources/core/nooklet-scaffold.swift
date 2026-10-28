@@ -10,26 +10,43 @@ let minimumMacOSVersion = "v14"
 
 public enum NookKitDependency: Equatable, Sendable {
     case localPath(String)
-    case remote(URL)
+    case remote(URL, version: AppVersion)
 
-    public static func parse(_ value: String) throws -> NookKitDependency {
+    public static func parse(_ value: String, version: AppVersion?) throws -> NookKitDependency {
         if value.hasPrefix("/") {
             return .localPath(value)
         }
         guard let url = URL(string: value), url.scheme == "https", url.host() != nil else {
             throw NookletScaffoldError.invalidNookKitDependency(value)
         }
-        return .remote(url)
+        guard let version else {
+            throw NookletScaffoldError.missingNookKitVersion(value)
+        }
+        return .remote(url, version: version)
     }
 
     var packageDeclaration: String {
         switch self {
         case .localPath(let path):
             ".package(path: \(swiftStringLiteral(path)))"
-        case .remote(let url):
-            ".package(url: \(swiftStringLiteral(url.absoluteString)), branch: \(swiftStringLiteral(nookKitRemoteBranch)))"
+        case .remote(let url, let version):
+            remotePackageDeclaration(url: url, version: version)
         }
     }
+}
+
+func remotePackageDeclaration(url: URL, version: AppVersion) -> String {
+    ".package(url: \(swiftStringLiteral(url.absoluteString)), from: \(swiftStringLiteral(version.description)))"
+}
+
+func remotePackageReference(url: URL) -> String {
+    ".package(url: \(swiftStringLiteral(url.absoluteString))"
+}
+
+public func pinNookKitDependency(in packageManifest: String, url: URL, version: AppVersion) -> String? {
+    let mainBranchDeclaration = ".package(url: \(swiftStringLiteral(url.absoluteString)), branch: \(swiftStringLiteral(nookKitRemoteBranch)))"
+    guard packageManifest.contains(mainBranchDeclaration) else { return nil }
+    return packageManifest.replacingOccurrences(of: mainBranchDeclaration, with: remotePackageDeclaration(url: url, version: version))
 }
 
 public func makeProductName(from displayName: String) throws -> String {
@@ -118,6 +135,7 @@ private func swiftStringLiteral(_ value: String) -> String {
 public enum NookletScaffoldError: Error, Equatable, LocalizedError {
     case unusableName(String)
     case invalidNookKitDependency(String)
+    case missingNookKitVersion(String)
     case directoryNotEmpty(String)
 
     public var errorDescription: String? {
@@ -126,6 +144,8 @@ public enum NookletScaffoldError: Error, Equatable, LocalizedError {
             "Nooklet name \"\(name)\" must start with an ASCII letter to become a Swift type name."
         case .invalidNookKitDependency(let value):
             "NookKit package location \"\(value)\" must be an absolute path or an https git URL."
+        case .missingNookKitVersion(let value):
+            "NookKit at \(value) is fetched by release, but this Nook has no version number to pick one; run Nook from its app bundle or set NOOK_KIT_PACKAGE to a local checkout."
         case .directoryNotEmpty(let path):
             "\(path) already contains \(manifestFileName) or \(packageManifestFileName); choose an empty folder."
         }

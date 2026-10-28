@@ -20,12 +20,22 @@ struct LibraryView: View {
             } else {
                 HStack(spacing: 0) {
                     SidebarView(model: model, onCreate: { isCreatingNooklet = true }, onAddFolder: addFolder)
-                    detail
+                    VStack(spacing: 0) {
+                        if let strip = model.nookKitStrip {
+                            NookKitStrip(model: model, state: strip)
+                                .padding(.horizontal, 32)
+                                .padding(.top, Theme.titlebarInset - 16)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+                        detail
+                    }
+                    .animation(.easeOut(duration: 0.2), value: model.nookKitStrip)
                 }
                 .environment(\.isOverlayPresented, isOverlayPresented)
             }
             MenuLayer(presenter: menuPresenter)
             RemovalConfirmationLayer(model: model, request: removalPresenter.request, onClose: removalPresenter.close)
+            ErrorLayer(report: model.errorReport) { model.errorReport = nil }
             if let updates {
                 UpdateLayer(model: updates)
             }
@@ -38,9 +48,6 @@ struct LibraryView: View {
         .sheet(isPresented: $isCreatingNooklet) {
             NewNookletSheet(model: model)
         }
-        .alert(item: $model.errorReport) { report in
-            Alert(title: Text(report.title), message: Text(report.message))
-        }
         .task { await model.monitor() }
         .task(id: model.hasLoaded) {
             guard model.hasLoaded, let updates else { return }
@@ -49,7 +56,7 @@ struct LibraryView: View {
     }
 
     private var isOverlayPresented: Bool {
-        menuPresenter.presentation != nil || removalPresenter.request != nil || updates?.phase != nil
+        menuPresenter.presentation != nil || removalPresenter.request != nil || updates?.phase != nil || model.errorReport != nil
     }
 
     @ViewBuilder

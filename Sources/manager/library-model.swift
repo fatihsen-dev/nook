@@ -11,7 +11,8 @@ let logLineLimit = 300
 struct ErrorReport: Identifiable {
     let id = UUID()
     let title: String
-    let message: String
+    var summary: String?
+    let details: String
 }
 
 enum OutputTab: String, CaseIterable {
@@ -31,11 +32,6 @@ struct NookletStatus {
     let memory: String?
 }
 
-struct NookKitRefreshPlan {
-    let refresher: NookKitRefresher
-    let appVersion: String
-}
-
 @MainActor
 @Observable
 final class LibraryModel {
@@ -53,15 +49,17 @@ final class LibraryModel {
 
     let nookKitDependency: NookKitDependency
     let identifierOwner: String
-    private let manager: NookletManager
+    let manager: NookletManager
     private let editor: CodeEditor
     private var logMonitor: FileChangeMonitor?
     private var monitoredLogFile: URL?
-    private let nookKitRefreshPlan: NookKitRefreshPlan?
+    private(set) var outdatedIdentifiers: Set<String> = []
+    var nookKitRebuild: NookKitRebuild?
+    var dismissedNookKitVersion: String?
 
-    init(manager: NookletManager, editor: CodeEditor, nookKitDependency: NookKitDependency, identifierOwner: String, nookKitRefreshPlan: NookKitRefreshPlan?) {
+    init(manager: NookletManager, editor: CodeEditor, nookKitDependency: NookKitDependency, identifierOwner: String) {
         self.manager = manager
-        self.nookKitRefreshPlan = nookKitRefreshPlan
+        self.dismissedNookKitVersion = UserDefaults.standard.string(forKey: dismissedNookKitVersionKey)
         self.editor = editor
         self.nookKitDependency = nookKitDependency
         self.identifierOwner = identifierOwner
@@ -92,7 +90,6 @@ final class LibraryModel {
         }
         hasLoaded = true
         await checkToolchain()
-        Task { await refreshNookKit() }
         while !Task.isCancelled {
             await refresh()
             do {
@@ -108,13 +105,16 @@ final class LibraryModel {
             entries = try manager.libraryEntries()
             forgetRemovedNooklets()
             var updated: [String: NookletRuntime] = [:]
+            var outdated: Set<String> = []
             for case .ready(let nooklet) in entries {
                 updated[nooklet.manifest.id] = try await manager.runtime(of: nooklet)
+                if try manager.isNookKitOutdated(nooklet) { outdated.insert(nooklet.manifest.id) }
                 if !buildingIdentifiers.contains(nooklet.manifest.id), let saved = try manager.lastBuildReport(of: nooklet), saved != buildReports[nooklet.manifest.id] {
                     buildReports[nooklet.manifest.id] = saved
                 }
             }
             runtimes = updated
+            if outdated != outdatedIdentifiers { outdatedIdentifiers = outdated }
         } catch {
             report(error, title: "Could not refresh nooklets")
         }
@@ -238,21 +238,6 @@ final class LibraryModel {
         buildReports = buildReports.filter { identifiers.contains($0.key) }
     }
 
-    private func refreshNookKit() async {
-        guard let nookKitRefreshPlan, case .found = toolchain else { return }
-        do {
-            let failures = try await nookKitRefreshPlan.refresher.refreshIfNeeded(appVersion: nookKitRefreshPlan.appVersion)
-            if !failures.isEmpty {
-                errorReport = ErrorReport(
-                    title: "Some nooklets did not get the new NookKit",
-                    message: failures.map { "\($0.nookletID): \($0.reason)" }.joined(separator: "\n\n"))
-            }
-        } catch {
-            report(error, title: "Could not update NookKit in your nooklets")
-        }
-        await refresh()
-    }
-
     private func checkToolchain() async {
         do {
             toolchain = .found(version: try await manager.toolchainVersion())
@@ -320,7 +305,7 @@ final class LibraryModel {
     }
 
     private func report(_ error: Error, title: String) {
-        errorReport = ErrorReport(title: title, message: error.localizedDescription)
+        errorReport = ErrorReport(title: title, details: error.localizedDescription)
     }
 }
 

@@ -16,9 +16,9 @@ public protocol NookletBuilder: Sendable {
     func updateDependency(_ identity: String, packageDirectory: URL) async throws
 }
 
-public protocol NookKitVersionStore: Sendable {
-    func load() throws -> String?
-    func save(_ version: String) throws
+public protocol NookKitSyncStore: Sendable {
+    func load() throws -> [String: String]
+    func save(_ versions: [String: String]) throws
 }
 
 public struct BackgroundService: Equatable, Sendable {

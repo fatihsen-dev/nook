@@ -28,18 +28,25 @@ struct ProductNameTests {
 
 struct NookKitDependencyTests {
     @Test func parsesAbsolutePathAsLocalPackage() throws {
-        #expect(try NookKitDependency.parse("/Users/me/nook") == .localPath("/Users/me/nook"))
+        #expect(try NookKitDependency.parse("/Users/me/nook", version: nil) == .localPath("/Users/me/nook"))
     }
 
-    @Test func parsesHTTPSURLAsRemotePackage() throws {
+    @Test func parsesHTTPSURLAsRemotePackageFromTheAppVersion() throws {
         let url = try #require(URL(string: "https://github.com/me/nook.git"))
-        #expect(try NookKitDependency.parse("https://github.com/me/nook.git") == .remote(url))
+        let version = try #require(AppVersion("0.1.6"))
+        #expect(try NookKitDependency.parse("https://github.com/me/nook.git", version: version) == .remote(url, version: version))
+    }
+
+    @Test func remotePackageWithoutAnAppVersionIsRejected() {
+        #expect(throws: NookletScaffoldError.missingNookKitVersion("https://github.com/me/nook.git")) {
+            try NookKitDependency.parse("https://github.com/me/nook.git", version: nil)
+        }
     }
 
     @Test(arguments: ["", "relative/nook", "ftp://example.com/nook"])
     func rejectsValuesThatAreNeitherAbsolutePathsNorHTTPSURLs(value: String) {
         #expect(throws: NookletScaffoldError.invalidNookKitDependency(value)) {
-            try NookKitDependency.parse(value)
+            try NookKitDependency.parse(value, version: AppVersion("0.1.6"))
         }
     }
 }
@@ -55,10 +62,24 @@ struct NookletTemplateTests {
         #expect(packageFile.contains(#".executableTarget(name: "NowPlaying""#))
     }
 
-    @Test func packageManifestDependsOnRemoteNookKitMainBranch() throws {
+    @Test func packageManifestDependsOnRemoteNookKitFromTheAppVersion() throws {
         let url = try #require(URL(string: "https://github.com/me/nook.git"))
-        let packageFile = makeTemplateFiles(for: manifest, dependency: .remote(url))["Package.swift"] ?? ""
-        #expect(packageFile.contains(#".package(url: "https://github.com/me/nook.git", branch: "main")"#))
+        let dependency = NookKitDependency.remote(url, version: try #require(AppVersion("0.1.6")))
+        let packageFile = makeTemplateFiles(for: manifest, dependency: dependency)["Package.swift"] ?? ""
+        #expect(packageFile.contains(#".package(url: "https://github.com/me/nook.git", from: "0.1.6")"#))
+    }
+
+    @Test func mainBranchLineWrittenByTheTemplateIsPinnedToTheVersion() throws {
+        let url = try #require(URL(string: "https://github.com/me/nook.git"))
+        let old = #"    dependencies: [.package(url: "https://github.com/me/nook.git", branch: "main")],"#
+        let pinned = pinNookKitDependency(in: old, url: url, version: try #require(AppVersion("0.1.6")))
+        #expect(pinned == #"    dependencies: [.package(url: "https://github.com/me/nook.git", from: "0.1.6")],"#)
+    }
+
+    @Test func handEditedDependencyIsLeftAlone() throws {
+        let url = try #require(URL(string: "https://github.com/me/nook.git"))
+        let edited = #"    dependencies: [.package(url: "https://github.com/me/nook.git", revision: "abc")],"#
+        #expect(pinNookKitDependency(in: edited, url: url, version: try #require(AppVersion("0.1.6"))) == nil)
     }
 
     @Test func entryFileDeclaresNookletNamedAfterProduct() {
