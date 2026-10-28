@@ -185,7 +185,17 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-To build the app locally without publishing:
+The release job signs the app with a Developer ID certificate and notarizes it. It reads these repository secrets:
+
+| Secret | Value |
+|---|---|
+| `DEVELOPER_ID_CERTIFICATE_BASE64` | The Developer ID Application certificate and its private key, exported as `.p12`, base64-encoded |
+| `DEVELOPER_ID_CERTIFICATE_PASSWORD` | The password of that `.p12` |
+| `APP_STORE_CONNECT_KEY_BASE64` | An App Store Connect API key (`.p8`), base64-encoded |
+| `APP_STORE_CONNECT_KEY_ID` | The key's ID |
+| `APP_STORE_CONNECT_ISSUER_ID` | The issuer ID shown above the key list |
+
+To build the app locally without publishing (signed ad hoc, so it opens without a prompt only on the Mac that built it):
 
 ```bash
 sh scripts/package-app.sh 0.1.0 https://github.com/fatihsen-dev/nook dist

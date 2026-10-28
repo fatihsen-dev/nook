@@ -22,10 +22,47 @@ jobs:
       - name: Test
         run: swift test
 
-      - name: Package
+      - name: Import the signing certificate and notarization key
+        env:
+          DEVELOPER_ID_CERTIFICATE_BASE64: ${{ secrets.DEVELOPER_ID_CERTIFICATE_BASE64 }}
+          DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          for secret in DEVELOPER_ID_CERTIFICATE_BASE64 DEVELOPER_ID_CERTIFICATE_PASSWORD APP_STORE_CONNECT_KEY_BASE64 APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID; do
+            eval "value=\${$secret:-}"
+            [ -n "$value" ] || { echo "::error::the repository secret $secret is not set"; exit 1; }
+          done
+          keychain_path="$RUNNER_TEMP/signing.keychain-db"
+          certificate_path="$RUNNER_TEMP/developer-id.p12"
+          key_path="$RUNNER_TEMP/app-store-connect-key.p8"
+          printf '%s' "$DEVELOPER_ID_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
+          printf '%s' "$APP_STORE_CONNECT_KEY_BASE64" | base64 --decode > "$key_path"
+          keychain_password="$(uuidgen)"
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$certificate_path" -P "$DEVELOPER_ID_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain_path"
+          security set-key-partition-list -S apple-tool:,apple: -k "$keychain_password" "$keychain_path" >/dev/null
+          security list-keychains -d user -s "$keychain_path" $(security list-keychains -d user | tr -d '"')
+          rm -f "$certificate_path"
+          identity="$(security find-identity -v -p codesigning "$keychain_path" | awk -F'"' '/Developer ID Application/ { print $2; exit }')"
+          [ -n "$identity" ] || { echo "::error::DEVELOPER_ID_CERTIFICATE_BASE64 holds no Developer ID Application identity"; exit 1; }
+          {
+            echo "KEYCHAIN_PATH=$keychain_path"
+            echo "SIGNING_IDENTITY=$identity"
+            echo "APP_STORE_CONNECT_KEY_PATH=$key_path"
+          } >> "$GITHUB_ENV"
+
+      - name: Package, sign and notarize
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         run: |
           version="${GITHUB_REF_NAME#v}"
-          sh scripts/package-app.sh "$version" "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" dist
+          sh scripts/package-app.sh "$version" "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" dist \
+            --sign "$SIGNING_IDENTITY" --notarize
 
       - name: Publish release
         env:
@@ -35,3 +72,9 @@ jobs:
             dist/Nook.dmg dist/Nook.dmg.sha256 dist/Nook.zip dist/Nook.zip.sha256 install.sh \
             --title "Nook ${GITHUB_REF_NAME#v}" \
             --generate-notes
+
+      - name: Remove signing material
+        if: always()
+        run: |
+          [ -z "${KEYCHAIN_PATH:-}" ] || security delete-keychain "$KEYCHAIN_PATH"
+          rm -f "$RUNNER_TEMP/app-store-connect-key.p8" "$RUNNER_TEMP/developer-id.p12"
