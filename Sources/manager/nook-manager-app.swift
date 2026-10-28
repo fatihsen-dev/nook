@@ -9,9 +9,16 @@ let windowMinimumSize = CGSize(width: 900, height: 600)
 @main
 struct NookManagerApp: App {
     private let configurationResult = Result { try NookConfiguration.load(environment: ProcessInfo.processInfo.environment, bundleInfo: Bundle.main.infoDictionary ?? [:]) }
+    private let updates: UpdateModel?
 
     init() {
         NSApplication.shared.setActivationPolicy(.regular)
+        do {
+            updates = try UpdateConfiguration.load(environment: ProcessInfo.processInfo.environment, bundle: .main).map { UpdateModel(configuration: $0) }
+        } catch {
+            FileHandle.standardError.write(Data("Nook updates are off: \(error.localizedDescription)\n".utf8))
+            updates = nil
+        }
     }
 
     var body: some Scene {
@@ -19,11 +26,13 @@ struct NookManagerApp: App {
             Group {
                 switch configurationResult {
                 case .success(let configuration):
-                    LibraryView(model: LibraryModel(
-                        manager: makeNookletManager(configuration: configuration),
-                        editor: makeCodeEditor(),
-                        nookKitDependency: configuration.nookKitDependency,
-                        identifierOwner: NSUserName()))
+                    LibraryView(
+                        model: LibraryModel(
+                            manager: makeNookletManager(configuration: configuration),
+                            editor: makeCodeEditor(),
+                            nookKitDependency: configuration.nookKitDependency,
+                            identifierOwner: NSUserName()),
+                        updates: updates)
                 case .failure(let error):
                     ContentUnavailableView("Nook is not configured", systemImage: "exclamationmark.triangle", description: Text(error.localizedDescription))
                 }
@@ -37,5 +46,12 @@ struct NookManagerApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(windowDefaultSize)
+        .commands {
+            if let updates {
+                CommandGroup(after: .appInfo) {
+                    Button("Check for Updates…", action: updates.checkNow)
+                }
+            }
+        }
     }
 }

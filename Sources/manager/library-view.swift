@@ -4,6 +4,7 @@ import SwiftUI
 
 struct LibraryView: View {
     @State var model: LibraryModel
+    let updates: UpdateModel?
     @State private var isCreatingNooklet = false
     @State private var menuPresenter = MenuPresenter()
     @State private var removalPresenter = RemovalPresenter()
@@ -25,6 +26,9 @@ struct LibraryView: View {
             }
             MenuLayer(presenter: menuPresenter)
             RemovalConfirmationLayer(model: model, request: removalPresenter.request, onClose: removalPresenter.close)
+            if let updates {
+                UpdateLayer(model: updates)
+            }
         }
         .coordinateSpace(.named(menuCoordinateSpace))
         .environment(menuPresenter)
@@ -38,10 +42,14 @@ struct LibraryView: View {
             Alert(title: Text(report.title), message: Text(report.message))
         }
         .task { await model.monitor() }
+        .task(id: model.hasLoaded) {
+            guard model.hasLoaded, let updates else { return }
+            await updates.checkPeriodically()
+        }
     }
 
     private var isOverlayPresented: Bool {
-        menuPresenter.presentation != nil || removalPresenter.request != nil
+        menuPresenter.presentation != nil || removalPresenter.request != nil || updates?.phase != nil
     }
 
     @ViewBuilder
