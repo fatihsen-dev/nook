@@ -109,6 +109,55 @@ struct NookletManagerTests {
         #expect(controller.started.isEmpty)
     }
 
+    @Test func buildingCompilesAndRecordsReportWithoutInstallingOrStarting() async throws {
+        let nooklet = try manager.addNooklet(at: makeNookletFolder(id: "com.example.clock", name: "Clock"))
+        let report = try await manager.build(nooklet)
+        #expect(report.isSuccess)
+        #expect(builder.builtProducts == ["Clock"])
+        #expect(controller.started.isEmpty)
+        #expect(!FileManager.default.fileExists(atPath: binariesDirectory.appending(path: "com.example.clock").path))
+        #expect(try manager.lastBuildReport(of: nooklet) == report)
+    }
+
+    @Test func failedBuildReportsDiagnostics() async throws {
+        let nooklet = try manager.addNooklet(at: makeNookletFolder(id: "com.example.clock", name: "Clock"))
+        builder.failureLog = "/a/app.swift:2:5: error: boom"
+        let report = try await manager.build(nooklet)
+        #expect(!report.isSuccess)
+        #expect(report.diagnostics == [BuildDiagnostic(file: URL(filePath: "/a/app.swift"), line: 2, column: 5, message: "boom")])
+    }
+
+    @Test func findingNookletByIdentifier() throws {
+        let nooklet = try manager.addNooklet(at: makeNookletFolder(id: "com.example.clock", name: "Clock"))
+        #expect(try manager.nooklet(matching: "com.example.clock", workingDirectory: URL(filePath: "/")) == nooklet)
+    }
+
+    @Test func findingNookletByAbsoluteOrRelativeFolder() throws {
+        let directory = try makeNookletFolder(id: "com.example.clock", name: "Clock")
+        let nooklet = try manager.addNooklet(at: directory)
+        #expect(try manager.nooklet(matching: directory.path, workingDirectory: URL(filePath: "/")) == nooklet)
+        let parent = directory.deletingLastPathComponent()
+        #expect(try manager.nooklet(matching: directory.lastPathComponent + "/", workingDirectory: parent) == nooklet)
+        #expect(try manager.nooklet(matching: ".", workingDirectory: directory) == nooklet)
+    }
+
+    @Test func findingUnknownNookletFails() throws {
+        try manager.addNooklet(at: makeNookletFolder(id: "com.example.clock", name: "Clock"))
+        #expect(throws: NookletLibraryError.unknownNooklet("com.example.timer")) {
+            try manager.nooklet(matching: "com.example.timer", workingDirectory: URL(filePath: "/"))
+        }
+    }
+
+    @Test func findingBrokenNookletReportsWhy() throws {
+        let directory = try makeNookletFolder(id: "com.example.clock", name: "Clock")
+        try manager.addNooklet(at: directory)
+        try FileManager.default.removeItem(at: directory.appending(path: manifestFileName))
+        #expect(throws: NookletLibraryError.brokenNooklet(directory.path, reason: NookletLibraryError.missingManifest(directory.path).localizedDescription)) {
+            try manager.nooklet(matching: directory.path, workingDirectory: URL(filePath: "/"))
+        }
+        #expect(try manager.libraryDirectory(matching: directory.path, workingDirectory: URL(filePath: "/")) == directory)
+    }
+
     @Test func stoppingStopsServiceLabel() async throws {
         let nooklet = try manager.addNooklet(at: makeNookletFolder(id: "com.example.clock", name: "Clock"))
         try await manager.stop(nooklet)

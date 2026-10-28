@@ -36,6 +36,13 @@ public enum NookletRuntime: Equatable, Sendable {
 public enum NookletLibraryEntry: Equatable, Sendable {
     case ready(InstalledNooklet)
     case broken(directory: URL, reason: String)
+
+    public var directory: URL {
+        switch self {
+        case .ready(let nooklet): nooklet.directory
+        case .broken(let directory, _): directory
+        }
+    }
 }
 
 public struct NookletManager: Sendable {
@@ -82,22 +89,53 @@ public struct NookletManager: Sendable {
     }
 
     public func run(_ nooklet: InstalledNooklet) async throws -> BuildReport {
+        let (outcome, report) = try await buildAndRecord(nooklet)
+        if case .succeeded(let executable, _) = outcome {
+            let installed = try install(executable, for: nooklet)
+            try await controller.start(BackgroundService(label: nooklet.serviceLabel, executable: installed, logFile: logFile(of: nooklet)))
+        }
+        return report
+    }
+
+    public func build(_ nooklet: InstalledNooklet) async throws -> BuildReport {
+        try await buildAndRecord(nooklet).report
+    }
+
+    public func libraryDirectory(matching reference: String, workingDirectory: URL) throws -> URL {
+        let entries = try libraryEntries()
+        for case .ready(let nooklet) in entries where nooklet.manifest.id == reference {
+            return nooklet.directory
+        }
+        let candidate = reference.hasPrefix("/") ? URL(filePath: reference) : workingDirectory.appending(path: reference)
+        let wanted = comparablePath(of: candidate)
+        guard let byFolder = entries.map(\.directory).first(where: { comparablePath(of: $0) == wanted }) else {
+            throw NookletLibraryError.unknownNooklet(reference)
+        }
+        return byFolder
+    }
+
+    public func nooklet(matching reference: String, workingDirectory: URL) throws -> InstalledNooklet {
+        switch makeLibraryEntry(for: try libraryDirectory(matching: reference, workingDirectory: workingDirectory)) {
+        case .ready(let nooklet):
+            return nooklet
+        case .broken(let directory, let reason):
+            throw NookletLibraryError.brokenNooklet(directory.path, reason: reason)
+        }
+    }
+
+    private func buildAndRecord(_ nooklet: InstalledNooklet) async throws -> (outcome: BuildOutcome, report: BuildReport) {
         let clock = ContinuousClock()
         let started = clock.now
         let outcome = try await builder.build(product: nooklet.manifest.product, packageDirectory: nooklet.directory)
         let duration = clock.now - started
-        switch outcome {
+        let report = switch outcome {
         case .failed(let log):
-            let report = BuildReport(isSuccess: false, log: log, diagnostics: parseBuildDiagnostics(log), duration: duration, finishedAt: Date())
-            try reportStore.save(report, nookletID: nooklet.manifest.id)
-            return report
-        case .succeeded(let executable, let log):
-            let installed = try install(executable, for: nooklet)
-            try await controller.start(BackgroundService(label: nooklet.serviceLabel, executable: installed, logFile: logFile(of: nooklet)))
-            let report = BuildReport(isSuccess: true, log: log, diagnostics: [], duration: duration, finishedAt: Date())
-            try reportStore.save(report, nookletID: nooklet.manifest.id)
-            return report
+            BuildReport(isSuccess: false, log: log, diagnostics: parseBuildDiagnostics(log), duration: duration, finishedAt: Date())
+        case .succeeded(_, let log):
+            BuildReport(isSuccess: true, log: log, diagnostics: [], duration: duration, finishedAt: Date())
         }
+        try reportStore.save(report, nookletID: nooklet.manifest.id)
+        return (outcome, report)
     }
 
     public func stop(_ nooklet: InstalledNooklet) async throws {
@@ -192,6 +230,11 @@ public struct NookletManager: Sendable {
     }
 }
 
+func comparablePath(of url: URL) -> String {
+    let path = url.absoluteURL.standardizedFileURL.resolvingSymlinksInPath().path
+    return path.count > 1 && path.hasSuffix("/") ? String(path.dropLast()) : path
+}
+
 func readManifest(in directory: URL) throws -> NookletManifest {
     let manifestURL = directory.appending(path: manifestFileName)
     guard FileManager.default.fileExists(atPath: manifestURL.path) else {
@@ -203,6 +246,8 @@ func readManifest(in directory: URL) throws -> NookletManifest {
 public enum NookletLibraryError: Error, Equatable, LocalizedError {
     case missingManifest(String)
     case duplicateIdentifier(String)
+    case unknownNooklet(String)
+    case brokenNooklet(String, reason: String)
 
     public var errorDescription: String? {
         switch self {
@@ -210,6 +255,10 @@ public enum NookletLibraryError: Error, Equatable, LocalizedError {
             "\(path) has no \(manifestFileName); it is not a nooklet folder."
         case .duplicateIdentifier(let id):
             "A nooklet with id \"\(id)\" is already in the library."
+        case .unknownNooklet(let reference):
+            "No nooklet in the library has the id or folder \"\(reference)\"."
+        case .brokenNooklet(let path, let reason):
+            "The nooklet at \(path) cannot be used: \(reason)"
         }
     }
 }
