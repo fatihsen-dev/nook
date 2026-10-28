@@ -24,8 +24,6 @@ Build a clock, mini dock, now-playing panel, system monitor, timer, or any other
 - macOS 14 or later
 - Xcode or the Command Line Tools (Nook builds nooklets with the Swift 6 toolchain)
 
-Nook is currently designed for macOS only.
-
 ## Install
 
 ```bash
@@ -52,10 +50,8 @@ NOOK_KIT_PACKAGE=$PWD swift run Nook
 
 1. Open Nook.
 2. Choose **New nooklet**.
-3. Select an empty folder.
-4. Enter a display name and identifier.
-5. Nook creates a Swift package with a `nook.json` manifest and a starter entry file.
-6. Press **Run**.
+3. Enter a **Name** and an **Identifier**, and choose an empty folder.
+4. Press **Create and run**. Nook writes a Swift package with a `nook.json` manifest and a starter entry file, builds it and starts it.
 
 The generated structure looks like this:
 
@@ -75,17 +71,19 @@ import NookKit
 import SwiftUI
 
 @main
-struct Clock: Nooklet {
+struct MyWidget: Nooklet {
     var body: some NookScene {
-        FloatingPanel(position: .topTrailing) {
-            Text("Hello from Nook")
-                .padding()
+        FloatingPanel {
+            Text("My Widget")
+                .font(.system(size: 24, weight: .semibold, design: .rounded))
+                .padding(20)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
         }
     }
 }
 ```
 
-Nooklet code is intentionally unrestricted. You can use SwiftUI, AppKit, macOS notifications, AppleScript, Core Graphics, system frameworks, or your own dependencies. Nook does not provide feature-specific services such as now-playing or battery data at this stage.
+Nooklet code is intentionally unrestricted. You can use SwiftUI, AppKit, macOS notifications, AppleScript, Core Graphics, system frameworks, or your own dependencies.
 
 ## Add an existing nooklet
 
@@ -107,17 +105,7 @@ Nook manager ── builds and registers ──▶ launchd ── runs and resta
 
 Closing the Nook manager does not stop a running nooklet. `launchd` can start it at login and restart it after an unsuccessful exit.
 
-Nook keeps generated runtime data under:
-
-```text
-~/Library/Application Support/Nook/
-├── library.json
-├── logs/<nooklet-id>.log
-├── builds/<nooklet-id>.json
-└── bin/<nooklet-id>/
-```
-
-Source folders are not modified when a nooklet is built, and removing a nooklet from Nook does not delete its source folder.
+Nook keeps its library, logs, build reports and installed binaries in `~/Library/Application Support/Nook/`. Logs are in `logs/<nooklet-id>.log`. Source folders are not modified when a nooklet is built, and removing a nooklet from Nook does not delete its source folder.
 
 ## NookKit
 
@@ -125,10 +113,23 @@ NookKit currently provides the common plumbing needed by nooklets:
 
 - `Nooklet` — the entry point protocol
 - `NookScene` — the scene abstraction
-- `FloatingPanel` — borderless desktop panels with placement and dragging
-- `writeLog` — append messages to the nooklet's log
+- `FloatingPanel` — a borderless panel the user can drag anywhere; Nook remembers where it was left
+- `writeLog` — append a message to the nooklet's log, shown live in Nook's Log tab
 
-Feature-specific services are intentionally out of scope for now. The `examples/` directory demonstrates how a developer can use native macOS APIs directly.
+`FloatingPanel` takes two optional arguments:
+
+```swift
+FloatingPanel(level: .floating, position: .topTrailing) {
+    MyView()
+}
+```
+
+| Argument | Values | Default |
+|---|---|---|
+| `level` | `.desktop` (below windows, on the desktop), `.normal`, `.floating` (above windows) | `.floating` |
+| `position` | `.center`, `.top`, `.bottom`, `.topLeading`, `.topTrailing`, `.bottomLeading`, `.bottomTrailing` | `.center` |
+
+Feature-specific services such as now-playing or battery data are intentionally out of scope for now: use native macOS APIs directly. The `examples/` directory and the [recipes on the website](https://nook.fatihsen.dev/#developers) (mini dock, now playing, battery, system stats, logging) show how.
 
 ## Examples
 
@@ -169,41 +170,30 @@ Run the tests:
 swift test
 ```
 
-The repository is split into these targets:
+The structure of the repository and the role of each target are described in [docs/architecture.md](docs/architecture.md).
 
-- `NookKit` — the SDK used by nooklets
-- `NookCore` — manager business rules and ports
-- `NookSystem` — macOS and toolchain adapters
-- `Nook` — the SwiftUI manager application
+## Uninstall
 
-### Releasing
-
-Push a version tag and GitHub Actions publishes the release that `install.sh` downloads:
+1. In Nook, choose **Remove from Nook** for each nooklet. This stops it and removes its launchd agent; the source folders stay.
+2. Quit Nook and delete `Nook.app` (from `~/Applications` if you used the installer).
+3. Delete Nook's data:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+rm -rf "$HOME/Library/Application Support/Nook"
 ```
 
-The release job signs the app with a Developer ID certificate and notarizes it. It reads these repository secrets:
-
-| Secret | Value |
-|---|---|
-| `DEVELOPER_ID_CERTIFICATE_BASE64` | The Developer ID Application certificate and its private key, exported as `.p12`, base64-encoded |
-| `DEVELOPER_ID_CERTIFICATE_PASSWORD` | The password of that `.p12` |
-| `APP_STORE_CONNECT_KEY_BASE64` | An App Store Connect API key (`.p8`), base64-encoded |
-| `APP_STORE_CONNECT_KEY_ID` | The key's ID |
-| `APP_STORE_CONNECT_ISSUER_ID` | The issuer ID shown above the key list |
-
-To build the app locally without publishing (signed ad hoc, so it opens without a prompt only on the Mac that built it):
+If you already deleted the app with nooklets still running, stop them from the terminal:
 
 ```bash
-sh scripts/package-app.sh 0.1.0 https://github.com/fatihsen-dev/nook dist
+for agent in ~/Library/LaunchAgents/dev.nook.nooklet.*.plist; do
+    launchctl bootout "gui/$(id -u)" "$agent"
+    rm "$agent"
+done
 ```
 
 ## Project status
 
-Nook is an early, macOS-only project focused on the core nooklet workflow: create, add, build, run, inspect and manage small native desktop apps.
+Nook is an early project focused on the core nooklet workflow: create, add, build, run, inspect and manage small native desktop apps.
 
 The API and manifest format may change before the first stable release.
 
@@ -214,7 +204,7 @@ Contributions are welcome. Before opening a pull request:
 1. Keep changes focused.
 2. Run `swift build`.
 3. Run `swift test`.
-4. Keep vendor-specific code inside its adapter.
+4. Follow the structure and dependency rules in [docs/architecture.md](docs/architecture.md).
 5. Do not add secrets or credentials to the repository.
 
 ## License
