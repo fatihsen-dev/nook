@@ -5,7 +5,7 @@ import SwiftUI
 @main
 struct MiniDock: Nooklet {
     var body: some NookScene {
-        FloatingPanel(level: .floating, position: .bottom) {
+        FloatingPanel(position: .bottom) {
             DockView(model: RunningApplications())
         }
     }

@@ -56,7 +56,7 @@ import SwiftUI
 @main
 struct MyWidget: Nooklet {               // Nooklet: @MainActor protocol with init() and `var body: some NookScene`
     var body: some NookScene {
-        FloatingPanel(level: .desktop, position: .topTrailing) {   // both arguments optional
+        FloatingPanel(level: .floating, position: .topTrailing) {   // both arguments optional
             ContentView()
         }
     }
@@ -68,7 +68,7 @@ struct MyWidget: Nooklet {               // Nooklet: @MainActor protocol with in
 | `Nooklet` | Entry point. `static main()` starts an accessory (Dock-less) app and shows the body's windows. |
 | `NookScene` | What `body` returns. `FloatingPanel` is the only scene today. |
 | `FloatingPanel(level:position:content:)` | Borderless, transparent, non-activating panel sized to its SwiftUI content, on all Spaces. Draggable anywhere; the last position is saved and restored. |
-| `PanelLevel` | `.desktop` (on the desktop, under windows, default), `.normal`, `.floating` (above windows; use it only for something that must stay on top, like a dock). |
+| `PanelLevel` | `.desktop` (on the desktop, under windows), `.normal`, `.floating` (above windows, default). |
 | `PanelPosition` | First placement: `.center` (default), `.top`, `.bottom`, `.topLeading`, `.topTrailing`, `.bottomLeading`, `.bottomTrailing`. |
 | `writeLog(_ message: String)` | Appends a `HH:mm:ss  message` line to the nooklet's log (Nook's Log tab, `nookctl logs`). Not actor-isolated; call it from any thread or task. Plain `print` also lands there. |
 

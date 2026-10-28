@@ -195,7 +195,7 @@ import SwiftUI
 @main
 struct MiniDock: Nooklet {
     var body: some NookScene {
-        FloatingPanel(level: .floating, position: .bottom) {
+        FloatingPanel(position: .bottom) {
             DockView()
         }
     }
@@ -352,7 +352,7 @@ struct TimerView: View {
             <h3>FloatingPanel</h3>
             <p>A borderless panel. Users drag it anywhere, Nook remembers where.</p>
             <pre class="snippet"><code data-swift>FloatingPanel(
-    level: .desktop,
+    level: .floating,
     position: .topTrailing
 ) { MyView() }</code></pre>
           </li>

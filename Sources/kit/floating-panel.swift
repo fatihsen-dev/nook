@@ -58,7 +58,7 @@ public struct FloatingPanel<Content: View>: NookScene {
     let position: PanelPosition
     let content: Content
 
-    public init(level: PanelLevel = .desktop, position: PanelPosition = .center, @ViewBuilder content: () -> Content) {
+    public init(level: PanelLevel = .floating, position: PanelPosition = .center, @ViewBuilder content: () -> Content) {
         self.level = level
         self.position = position
         self.content = content()
