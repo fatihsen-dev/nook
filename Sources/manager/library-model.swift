@@ -102,7 +102,7 @@ final class LibraryModel {
             var updated: [String: NookletRuntime] = [:]
             for case .ready(let nooklet) in entries {
                 updated[nooklet.manifest.id] = try await manager.runtime(of: nooklet)
-                if buildReports[nooklet.manifest.id] == nil, let saved = try manager.lastBuildReport(of: nooklet) {
+                if !buildingIdentifiers.contains(nooklet.manifest.id), let saved = try manager.lastBuildReport(of: nooklet), saved != buildReports[nooklet.manifest.id] {
                     buildReports[nooklet.manifest.id] = saved
                 }
             }
@@ -298,15 +298,6 @@ final class LibraryModel {
 
     private func report(_ error: Error, title: String) {
         errorReport = ErrorReport(title: title, message: error.localizedDescription)
-    }
-}
-
-extension NookletLibraryEntry {
-    var directory: URL {
-        switch self {
-        case .ready(let nooklet): nooklet.directory
-        case .broken(let directory, _): directory
-        }
     }
 }
 

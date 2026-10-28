@@ -1,6 +1,5 @@
 import Foundation
 import NookCore
-import NookSystem
 
 let nookKitPackageVariable = "NOOK_KIT_PACKAGE"
 let nookKitPackageInfoKey = "NookKitPackage"
@@ -13,12 +12,12 @@ let buildsDirectoryName = "builds"
 let xcrunExecutable = URL(filePath: "/usr/bin/xcrun")
 let launchctlExecutable = URL(filePath: "/bin/launchctl")
 
-struct NookConfiguration {
-    let nookKitDependency: NookKitDependency
-    let supportDirectory: URL
-    let launchAgentsDirectory: URL
+public struct NookConfiguration: Sendable {
+    public let nookKitDependency: NookKitDependency
+    public let supportDirectory: URL
+    public let launchAgentsDirectory: URL
 
-    static func load(environment: [String: String], bundleInfo: [String: Any]) throws -> NookConfiguration {
+    public static func load(environment: [String: String], bundleInfo: [String: Any]) throws -> NookConfiguration {
         guard let nookKitPackage = nonEmpty(environment[nookKitPackageVariable]) ?? nonEmpty(bundleInfo[nookKitPackageInfoKey] as? String) else {
             throw ConfigurationError.missingNookKitPackage
         }
@@ -37,10 +36,10 @@ struct NookConfiguration {
     }
 }
 
-enum ConfigurationError: Error, LocalizedError {
+public enum ConfigurationError: Error, LocalizedError {
     case missingNookKitPackage
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .missingNookKitPackage:
             "No NookKit source is configured. Set the \(nookKitPackageVariable) environment variable to the absolute path of a nook checkout or to its https git URL, or run Nook from its app bundle, whose Info.plist sets \(nookKitPackageInfoKey)."
@@ -48,11 +47,11 @@ enum ConfigurationError: Error, LocalizedError {
     }
 }
 
-func makeCodeEditor() -> CodeEditor {
+public func makeCodeEditor() -> CodeEditor {
     XcodeEditor(xcrun: xcrunExecutable)
 }
 
-func makeNookletManager(configuration: NookConfiguration) -> NookletManager {
+public func makeNookletManager(configuration: NookConfiguration) -> NookletManager {
     NookletManager(
         store: JSONLibraryStore(fileURL: configuration.supportDirectory.appending(path: libraryFileName)),
         builder: SwiftPackageBuilder(xcrun: xcrunExecutable),

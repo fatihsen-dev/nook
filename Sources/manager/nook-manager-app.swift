@@ -1,5 +1,6 @@
 import AppKit
 import NookCore
+import NookSystem
 import SwiftUI
 
 let windowDefaultSize = CGSize(width: 1120, height: 720)
