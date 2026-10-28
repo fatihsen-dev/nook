@@ -28,7 +28,7 @@ Use `nookctl`, the command-line tool shipped inside Nook.app (installed to `~/.l
 - `stop` unregisters the agent, so a stopped nooklet stays stopped across logins until the next `run`.
 - `remove` stops it and deletes the installed binary, the agent, the log and the last build report. It never touches the source folder. The saved panel position survives; reset it with `defaults delete <product> nook.floating-panel.top-left`.
 - The log is `~/Library/Application Support/Nook/logs/<id>.log`: stdout and stderr of the process. NookKit itself writes `started (pid N)` and `panel placed at x, y` or `panel restored at x, y` (screen points, origin bottom-left), so look past those for your own lines.
-- How `Package.swift` finds NookKit: an installed Nook writes `.package(url: "https://github.com/fatihsen-dev/nook", branch: "main")`, so the folder builds on any Mac and can live in its own git repository. When `NOOK_KIT_PACKAGE` is set (Nook development), it writes a local path instead.
+- How `Package.swift` finds NookKit: an installed Nook writes `.package(url: "https://github.com/fatihsen-dev/nook", from: "<Nook version>")`, so the folder builds on any Mac against a released NookKit and can live in its own git repository. After Nook updates, the next `run` or `build` moves the nooklet onto the new NookKit first. When `NOOK_KIT_PACKAGE` is set (Nook development), it writes a local path instead.
 
 Fix every reported diagnostic and build again before calling `run`. A nooklet that builds but logs nothing looks broken to the user: log the state changes that matter with `writeLog`.
 
