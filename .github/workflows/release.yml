@@ -13,6 +13,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Show toolchain
         run: |
@@ -68,10 +70,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          sh scripts/release-notes.sh "$GITHUB_REF_NAME" "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" > "$RUNNER_TEMP/release-notes.md"
           gh release create "$GITHUB_REF_NAME" \
             dist/Nook.dmg dist/Nook.dmg.sha256 dist/Nook.zip dist/Nook.zip.sha256 install.sh \
             --title "Nook ${GITHUB_REF_NAME#v}" \
-            --generate-notes
+            --notes-file "$RUNNER_TEMP/release-notes.md"
 
       - name: Remove signing material
         if: always()
