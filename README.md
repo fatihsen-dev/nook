@@ -30,7 +30,7 @@ Build a clock, mini dock, now-playing panel, system monitor, timer, or any other
 curl -fsSL https://nook.fatihsen.dev/install.sh | sh
 ```
 
-The installer downloads the latest release, verifies its SHA-256 checksum and puts `Nook.app` in `~/Applications`. Run the same command again to update. Set `NOOK_INSTALL_DIR` to install somewhere else.
+The installer downloads the latest release, verifies its SHA-256 checksum and puts `Nook.app` in `~/Applications`. It also links the `nookctl` command-line tool into `~/.local/bin`. Run the same command again to update. Set `NOOK_INSTALL_DIR` or `NOOK_BIN_DIR` to install somewhere else.
 
 Prefer a manual install? Download [`Nook.dmg`](https://github.com/fatihsen-dev/nook/releases/latest/download/Nook.dmg) (or [`Nook.zip`](https://github.com/fatihsen-dev/nook/releases/latest/download/Nook.zip)) from the latest release and drag `Nook.app` into Applications. Releases are signed with a Developer ID and notarized by Apple, so they open without a Gatekeeper warning.
 
@@ -94,6 +94,22 @@ Use **Add existing folder** and choose a folder containing:
 - a Swift executable target that links `NookKit`
 
 Nook validates the manifest, builds the package in release mode, installs the executable under its application support directory, and registers it with `launchd`.
+
+## Command line and AI agents
+
+`nookctl` does everything the Nook window does, from the terminal. It ships inside `Nook.app` (`Nook.app/Contents/MacOS/nookctl`; the installer links it into `~/.local/bin`):
+
+```bash
+nookctl new battery-ring --name "Battery Ring"   # create a nooklet and add it to the library
+nookctl build .                                  # compile only; errors print as file:line:column: error: message
+nookctl run .                                    # build, install and start (or restart)
+nookctl logs . --follow                          # stream its log
+nookctl list --json                              # status, pid and memory of every nooklet
+```
+
+A nooklet is referred to by its id or its folder. `build`, `run` and `list` take `--json`, and a failed build exits with status 1, so an AI coding agent can write a nooklet, build it, fix the reported errors and check the log on its own. The Nook window shows these changes within a few seconds. Run `nookctl help` for every command.
+
+To teach an agent about Nook, give it the skill in [`skills/nook`](skills/nook/SKILL.md): it covers the nooklet layout, the NookKit API and this workflow, with compiling recipes. Copy the folder into your agent's skills directory (for Claude Code, `~/.claude/skills/nook`). The website also serves a summary for language models at [nook.fatihsen.dev/llms.txt](https://nook.fatihsen.dev/llms.txt).
 
 ## Nooklet lifecycle
 
@@ -175,7 +191,7 @@ The structure of the repository and the role of each target are described in [do
 ## Uninstall
 
 1. In Nook, choose **Remove from Nook** for each nooklet. This stops it and removes its launchd agent; the source folders stay.
-2. Quit Nook and delete `Nook.app` (from `~/Applications` if you used the installer).
+2. Quit Nook and delete `Nook.app` (from `~/Applications` if you used the installer), and `~/.local/bin/nookctl` if the installer linked it.
 3. Delete Nook's data:
 
 ```bash
