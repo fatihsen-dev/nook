@@ -1,0 +1,21 @@
+# Nook
+
+> Nook is a macOS app that builds, runs and supervises small native desktop apps called nooklets: widgets, mini docks, now-playing panels, monitors. A nooklet is a plain Swift package whose executable links NookKit; Nook registers it with launchd, so it keeps running after Nook closes. Its UI is free-form SwiftUI or AppKit, and its features come from ordinary macOS APIs.
+
+To write a nooklet, read the agent skill first. It has the full NookKit API, the nooklet layout and the `nookctl` command-line loop (`new`, `build`, `run`, `logs`) that lets an agent compile a nooklet, read compiler diagnostics and check its log without the Nook window.
+
+## Docs
+
+- [Agent skill](https://raw.githubusercontent.com/fatihsen-dev/nook/main/skills/nook/SKILL.md): what Nook is, the NookKit API, the nookctl workflow and macOS pitfalls
+- [Recipes](https://raw.githubusercontent.com/fatihsen-dev/nook/main/skills/nook/references/recipes.md): complete, compiling nooklets (clock, mini dock, Spotify now playing, battery, system stats, logging)
+- [README](https://raw.githubusercontent.com/fatihsen-dev/nook/main/README.md): install, first nooklet, lifecycle, uninstall
+
+## Install
+
+- `curl -fsSL https://nook.fatihsen.dev/install.sh | sh` installs Nook.app into ~/Applications and links `nookctl` into ~/.local/bin
+- [Nook.dmg](https://github.com/fatihsen-dev/nook/releases/latest/download/Nook.dmg): signed and notarized disk image
+
+## Optional
+
+- [Source code](https://github.com/fatihsen-dev/nook)
+- [Example nooklets](https://github.com/fatihsen-dev/nook/tree/main/examples)

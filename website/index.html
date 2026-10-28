@@ -278,11 +278,10 @@ struct Battery: Nooklet {
 func batteryLevel() -&gt; Int? {
     let info = IOPSCopyPowerSourcesInfo().takeRetainedValue()
     let sources = IOPSCopyPowerSourcesList(info).takeRetainedValue() as [CFTypeRef]
-    guard let source = sources.first,
-          let details = IOPSGetPowerSourceDescription(info, source)?
-              .takeUnretainedValue() as? [String: Any]
-    else { return nil }
-    return details[kIOPSCurrentCapacityKey] as? Int
+    let battery = sources
+        .compactMap { IOPSGetPowerSourceDescription(info, $0)?.takeUnretainedValue() as? [String: Any] }
+        .first { $0[kIOPSTypeKey] as? String == kIOPSInternalBatteryType }
+    return battery?[kIOPSCurrentCapacityKey] as? Int
 }</code></pre>
             </figure>
             <figure class="editor recipe-panel" role="tabpanel" id="recipe-system-stats" data-panel="system-stats" hidden>
