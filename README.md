@@ -144,7 +144,7 @@ FloatingPanel(level: .floating, position: .topTrailing) {
 
 | Argument | Values | Default |
 |---|---|---|
-| `level` | `.desktop` (below windows, on the desktop), `.normal`, `.floating` (above windows) | `.floating` |
+| `level` | `.desktop` (on the desktop: under windows and under desktop icons, brought in front of the icons while the pointer is over it), `.normal`, `.floating` (above windows) | `.floating` |
 | `position` | `.center`, `.top`, `.bottom`, `.topLeading`, `.topTrailing`, `.bottomLeading`, `.bottomTrailing` | `.center` |
 
 Feature-specific services such as now-playing or battery data are intentionally out of scope for now: use native macOS APIs directly. The `examples/` directory and the [recipes on the website](https://nook.fatihsen.dev/#developers) (mini dock, now playing, battery, system stats, logging) show how.

@@ -13,12 +13,17 @@ public enum PanelLevel: Sendable {
     var windowLevel: NSWindow.Level {
         switch self {
         case .desktop:
-            NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) + 1)
+            NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) - 1)
         case .normal:
             .normal
         case .floating:
             .floating
         }
+    }
+
+    var hoverLevel: NSWindow.Level? {
+        guard self == .desktop else { return nil }
+        return NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) + 1)
     }
 }
 
@@ -75,6 +80,9 @@ public struct FloatingPanel<Content: View>: NookScene {
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.level = level.windowLevel
+        if let hoverLevel = level.hoverLevel {
+            panel.raiseOnHover(to: hoverLevel)
+        }
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
         let controller = NSHostingController(rootView: content)
         controller.sizingOptions = .preferredContentSize
@@ -116,6 +124,33 @@ private func isOnSomeScreen(_ point: CGPoint) -> Bool {
 private final class KeyablePanel: NSPanel {
     private var dragStart: (mouse: NSPoint, origin: NSPoint)?
     private var isDragging = false
+    private var hoverMonitors: [Any] = []
+
+    func raiseOnHover(to hoverLevel: NSWindow.Level) {
+        let restingLevel = level
+        acceptsMouseMovedEvents = true
+        let events: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDragged, .leftMouseUp]
+        let update = { [weak self] in
+            MainActor.assumeIsolated {
+                self?.updateLevel(resting: restingLevel, hover: hoverLevel)
+            }
+        }
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: events, handler: { _ in update() }) {
+            hoverMonitors.append(global)
+        }
+        if let local = NSEvent.addLocalMonitorForEvents(matching: events, handler: { event in
+            update()
+            return event
+        }) {
+            hoverMonitors.append(local)
+        }
+    }
+
+    private func updateLevel(resting: NSWindow.Level, hover: NSWindow.Level) {
+        guard dragStart == nil else { return }
+        let target = frame.contains(NSEvent.mouseLocation) ? hover : resting
+        if level != target { level = target }
+    }
 
     override var canBecomeKey: Bool { true }
 
