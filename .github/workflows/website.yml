@@ -4,12 +4,15 @@ on:
   push:
     branches:
       - main
-    tags:
-      - "v*"
     paths:
       - "website/**"
       - "install.sh"
       - ".github/workflows/website.yml"
+  workflow_run:
+    workflows:
+      - Release
+    types:
+      - completed
   workflow_dispatch:
 
 permissions:
@@ -26,6 +29,7 @@ env:
 
 jobs:
   build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
