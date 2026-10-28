@@ -6,6 +6,8 @@ Build a clock, mini dock, now-playing panel, system monitor, timer, or any other
 
 > Nook gives developers the runtime plumbing. The interface and behaviour belong to the nooklet.
 
+**Website:** [nook.fatihsen.dev](https://nook.fatihsen.dev)
+
 ![Nook manager with Clock, Now Playing and Mini Dock nooklets](docs/nook-hero.png)
 
 ## Why Nook?
@@ -27,7 +29,7 @@ Nook is currently designed for macOS only.
 ## Install
 
 ```bash
-curl -fsSL https://github.com/fatihsen-dev/nook/releases/latest/download/install.sh | sh
+curl -fsSL https://nook.fatihsen.dev/install.sh | sh
 ```
 
 The installer downloads the latest release, verifies its SHA-256 checksum and puts `Nook.app` in `~/Applications`. Run the same command again to update. Set `NOOK_INSTALL_DIR` to install somewhere else.
