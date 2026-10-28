@@ -31,6 +31,11 @@ struct NookletStatus {
     let memory: String?
 }
 
+struct NookKitRefreshPlan {
+    let refresher: NookKitRefresher
+    let appVersion: String
+}
+
 @MainActor
 @Observable
 final class LibraryModel {
@@ -52,9 +57,11 @@ final class LibraryModel {
     private let editor: CodeEditor
     private var logMonitor: FileChangeMonitor?
     private var monitoredLogFile: URL?
+    private let nookKitRefreshPlan: NookKitRefreshPlan?
 
-    init(manager: NookletManager, editor: CodeEditor, nookKitDependency: NookKitDependency, identifierOwner: String) {
+    init(manager: NookletManager, editor: CodeEditor, nookKitDependency: NookKitDependency, identifierOwner: String, nookKitRefreshPlan: NookKitRefreshPlan?) {
         self.manager = manager
+        self.nookKitRefreshPlan = nookKitRefreshPlan
         self.editor = editor
         self.nookKitDependency = nookKitDependency
         self.identifierOwner = identifierOwner
@@ -85,6 +92,7 @@ final class LibraryModel {
         }
         hasLoaded = true
         await checkToolchain()
+        Task { await refreshNookKit() }
         while !Task.isCancelled {
             await refresh()
             do {
@@ -228,6 +236,21 @@ final class LibraryModel {
             return nooklet.manifest.id
         })
         buildReports = buildReports.filter { identifiers.contains($0.key) }
+    }
+
+    private func refreshNookKit() async {
+        guard let nookKitRefreshPlan, case .found = toolchain else { return }
+        do {
+            let failures = try await nookKitRefreshPlan.refresher.refreshIfNeeded(appVersion: nookKitRefreshPlan.appVersion)
+            if !failures.isEmpty {
+                errorReport = ErrorReport(
+                    title: "Some nooklets did not get the new NookKit",
+                    message: failures.map { "\($0.nookletID): \($0.reason)" }.joined(separator: "\n\n"))
+            }
+        } catch {
+            report(error, title: "Could not update NookKit in your nooklets")
+        }
+        await refresh()
     }
 
     private func checkToolchain() async {

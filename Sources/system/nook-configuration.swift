@@ -9,6 +9,7 @@ let libraryFileName = "library.json"
 let logsDirectoryName = "logs"
 let binariesDirectoryName = "bin"
 let buildsDirectoryName = "builds"
+let nookKitVersionFileName = "nookkit-version"
 let xcrunExecutable = URL(filePath: "/usr/bin/xcrun")
 let launchctlExecutable = URL(filePath: "/bin/launchctl")
 
@@ -63,4 +64,11 @@ public func makeNookletManager(configuration: NookConfiguration) -> NookletManag
         reportStore: JSONBuildReportStore(directory: configuration.supportDirectory.appending(path: buildsDirectoryName)),
         logsDirectory: configuration.supportDirectory.appending(path: logsDirectoryName),
         binariesDirectory: configuration.supportDirectory.appending(path: binariesDirectoryName))
+}
+
+public func makeNookKitRefresher(configuration: NookConfiguration) -> NookKitRefresher {
+    NookKitRefresher(
+        manager: makeNookletManager(configuration: configuration),
+        builder: SwiftPackageBuilder(xcrun: xcrunExecutable),
+        versionStore: TextFileVersionStore(file: configuration.supportDirectory.appending(path: nookKitVersionFileName)))
 }

@@ -5,6 +5,7 @@ import SwiftUI
 
 let windowDefaultSize = CGSize(width: 1120, height: 720)
 let windowMinimumSize = CGSize(width: 900, height: 600)
+let appVersionInfoKey = "CFBundleShortVersionString"
 
 @main
 struct NookManagerApp: App {
@@ -31,7 +32,8 @@ struct NookManagerApp: App {
                             manager: makeNookletManager(configuration: configuration),
                             editor: makeCodeEditor(),
                             nookKitDependency: configuration.nookKitDependency,
-                            identifierOwner: NSUserName()),
+                            identifierOwner: NSUserName(),
+                            nookKitRefreshPlan: makeNookKitRefreshPlan(configuration: configuration)),
                         updates: updates)
                 case .failure(let error):
                     ContentUnavailableView("Nook is not configured", systemImage: "exclamationmark.triangle", description: Text(error.localizedDescription))
@@ -54,4 +56,9 @@ struct NookManagerApp: App {
             }
         }
     }
+}
+
+private func makeNookKitRefreshPlan(configuration: NookConfiguration) -> NookKitRefreshPlan? {
+    guard let appVersion = Bundle.main.infoDictionary?[appVersionInfoKey] as? String else { return nil }
+    return NookKitRefreshPlan(refresher: makeNookKitRefresher(configuration: configuration), appVersion: appVersion)
 }

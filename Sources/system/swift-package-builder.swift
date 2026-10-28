@@ -23,6 +23,13 @@ public struct SwiftPackageBuilder: NookletBuilder {
         return .succeeded(executable: URL(filePath: binDirectory).appending(path: product), log: log)
     }
 
+    public func updateDependency(_ identity: String, packageDirectory: URL) async throws {
+        let output = try await runProcess(xcrun, arguments: ["swift", "package", "--package-path", packageDirectory.path, "update", identity])
+        guard output.isSuccess else {
+            throw SwiftPackageBuildError.dependencyUpdateFailed(identity, packageDirectory.path, removeTerminalStyling(output.text))
+        }
+    }
+
     public func toolchainVersion() async throws -> String {
         let output = try await runProcess(xcrun, arguments: ["swift", "--version"])
         guard output.isSuccess, let version = parseSwiftVersion(output.text) else {
@@ -49,11 +56,14 @@ func parseSwiftVersion(_ output: String) -> String? {
 public enum SwiftPackageBuildError: Error, LocalizedError {
     case binPathUnavailable(String, String)
     case toolchainUnavailable(String)
+    case dependencyUpdateFailed(String, String, String)
 
     public var errorDescription: String? {
         switch self {
         case .binPathUnavailable(let path, let output):
             "Could not find the build output folder of \(path):\n\(output)"
+        case .dependencyUpdateFailed(let identity, let path, let output):
+            "Could not update \(identity) in \(path):\n\(output)"
         case .toolchainUnavailable(let output):
             "No Swift toolchain found. Install Xcode or the Command Line Tools (xcode-select --install).\n\(output)"
         }

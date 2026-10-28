@@ -297,6 +297,19 @@ final class RecordingBuilder: NookletBuilder, @unchecked Sendable {
     }
 
     func toolchainVersion() async throws -> String { "6.4" }
+
+    private var updatedDirectories: [URL] = []
+    private var storedUpdateFailure: Error?
+    var dependencyUpdates: [URL] { lock.withLock { updatedDirectories } }
+    var updateFailure: Error? {
+        get { lock.withLock { storedUpdateFailure } }
+        set { lock.withLock { storedUpdateFailure = newValue } }
+    }
+
+    func updateDependency(_ identity: String, packageDirectory: URL) async throws {
+        if let updateFailure { throw updateFailure }
+        lock.withLock { updatedDirectories.append(packageDirectory) }
+    }
 }
 
 final class RecordingServiceController: BackgroundServiceController, @unchecked Sendable {

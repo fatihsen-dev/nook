@@ -13,6 +13,12 @@ public enum BuildOutcome: Equatable, Sendable {
 public protocol NookletBuilder: Sendable {
     func build(product: String, packageDirectory: URL) async throws -> BuildOutcome
     func toolchainVersion() async throws -> String
+    func updateDependency(_ identity: String, packageDirectory: URL) async throws
+}
+
+public protocol NookKitVersionStore: Sendable {
+    func load() throws -> String?
+    func save(_ version: String) throws
 }
 
 public struct BackgroundService: Equatable, Sendable {
