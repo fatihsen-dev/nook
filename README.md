@@ -34,7 +34,7 @@ curl -fsSL https://nook.fatihsen.dev/install.sh | sh
 
 The installer downloads the latest release, verifies its SHA-256 checksum and puts `Nook.app` in `~/Applications`. Run the same command again to update. Set `NOOK_INSTALL_DIR` to install somewhere else.
 
-Prefer a manual install? Download [`Nook.dmg`](https://github.com/fatihsen-dev/nook/releases/latest/download/Nook.dmg) (or [`Nook.zip`](https://github.com/fatihsen-dev/nook/releases/latest/download/Nook.zip)) from the latest release and drag `Nook.app` into Applications. Nook is not notarized yet, so macOS blocks the first launch of a browser download: open System Settings → Privacy & Security and choose **Open Anyway**. The `curl` installer does not need this step.
+Prefer a manual install? Download [`Nook.dmg`](https://github.com/fatihsen-dev/nook/releases/latest/download/Nook.dmg) (or [`Nook.zip`](https://github.com/fatihsen-dev/nook/releases/latest/download/Nook.zip)) from the latest release and drag `Nook.app` into Applications. Releases are signed with a Developer ID and notarized by Apple, so they open without a Gatekeeper warning.
 
 ## Run Nook from source
 
