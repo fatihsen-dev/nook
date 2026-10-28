@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
     paths:
       - "website/**"
       - "install.sh"
@@ -27,6 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Assemble site
         run: |
@@ -34,6 +38,10 @@ jobs:
           cp -R website/. _site/
           cp install.sh _site/install.sh
           printf '%s\n' "$SITE_DOMAIN" > _site/CNAME
+          version="$(git describe --tags --abbrev=0 --match 'v*')"
+          sed -i -E "s#<span data-release-version>[^<]*</span>#<span data-release-version>${version}</span>#" _site/index.html
+          grep -q "<span data-release-version>${version}</span>" _site/index.html \
+            || { echo "::error::website/index.html has no <span data-release-version> to show ${version} in"; exit 1; }
 
       - uses: actions/configure-pages@v5
 
