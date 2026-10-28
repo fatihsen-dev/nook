@@ -26,9 +26,10 @@ Nook (manager window) ──writes──▶ ~/Library/LaunchAgents/<label>.plist
 | `Tests/system-tests/` | `NookSystemTests` | Tests for adapter output that does not need a live system service. |
 | `design/` | — | Design sources: `nook.pen` (Pen canvas) and `brand/` (logo files, app icon, logo guidelines). Not part of the build. |
 | `examples/` | — | Example nooklets (`clock`, `mini-dock`, `now-playing`), each its own package depending on this repository through `.package(path: "../..")`. Not part of the build. |
+| `website/` | — | Static site for nook.fatihsen.dev (`index.html`, `styles.css`, `script.js`, `assets/`), plain HTML/CSS/JS with no build step, designed in `design/nook.pen`. Fonts, icons and hero images are self-hosted under `assets/`. Not part of the Swift build. |
 | `install.sh` | — | One-line installer (`curl -fsSL … | sh`): downloads `Nook.zip` from the latest GitHub release, verifies it against `Nook.zip.sha256`, and installs `Nook.app` into `~/Applications`. |
 | `scripts/` | — | Maintainer scripts. `package-app.sh <version> <repository-url> <output>` builds a universal release binary and packages `Nook.app`, `Nook.zip` and its checksum. |
-| `.github/workflows/` | — | `release.yml`: on a `v*` tag, runs the tests, packages the app and publishes a GitHub release with `Nook.zip`, `Nook.zip.sha256` and `install.sh`. |
+| `.github/workflows/` | — | `release.yml`: on a `v*` tag, runs the tests, packages the app and publishes a GitHub release with `Nook.zip`, `Nook.zip.sha256` and `install.sh`. `website.yml`: on a push to `main` that touches `website/` or `install.sh`, publishes `website/` plus `install.sh` and a `CNAME` to GitHub Pages at nook.fatihsen.dev. |
 
 Dependency direction: `Nook → NookSystem → NookCore`, `Nook → NookCore`. `NookCore` knows nothing about launchd or the Swift toolchain. `NookKit` is independent of all three.
 

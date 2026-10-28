@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nook · Tiny native apps for your Mac</title>
+  <meta name="description" content="Write a nooklet in Swift. Nook builds it, runs it in the background and keeps it alive after you close the window.">
+  <meta name="theme-color" content="#0A0B0A">
+  <meta property="og:title" content="Nook · Tiny native apps for your Mac">
+  <meta property="og:description" content="Write a nooklet in Swift. Nook builds it, runs it and keeps it alive.">
+  <meta property="og:image" content="https://nook.fatihsen.dev/assets/hero-desktop.webp">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/inter-variable.woff2" as="font" type="font/woff2" crossorigin>
+  <script>document.documentElement.classList.add("has-js");</script>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="nav" data-nav>
+    <div class="nav-inner">
+      <a class="brand" href="#top" aria-label="Nook home"><img src="assets/wordmark.svg" alt="Nook" width="57" height="28"></a>
+      <nav class="nav-links" id="nav-links" data-nav-links>
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#developers">Developers</a>
+        <a href="https://github.com/fatihsen-dev/nook#readme">Docs</a>
+      </nav>
+      <div class="nav-actions">
+        <a class="button button-secondary button-small" href="https://github.com/fatihsen-dev/nook"><svg class="icon"><use href="assets/icons.svg#github"/></svg>GitHub</a>
+        <button class="menu-button" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links" data-menu-button>
+          <svg class="icon icon-open"><use href="assets/icons.svg#menu"/></svg>
+          <svg class="icon icon-close"><use href="assets/icons.svg#x"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-glow" aria-hidden="true">
+        <span class="glow glow-one"></span>
+        <span class="glow glow-two"></span>
+        <span class="glow glow-three"></span>
+      </div>
+      <div class="hero-content">
+        <p class="eyebrow reveal"><span class="eyebrow-dot"></span>v0.1.0 · open source · macOS 14+</p>
+        <h1 class="reveal">Tiny native apps<br>for your Mac.</h1>
+        <p class="lead reveal">Write a nooklet in Swift. Nook builds it, runs it in the background and keeps it alive after you close the window.</p>
+        <div class="install reveal" data-copy-source>
+          <span class="install-prompt">$</span>
+          <code data-copy-text>curl -fsSL nook.fatihsen.dev/install.sh | sh</code>
+          <button class="copy-button" type="button" aria-label="Copy install command" data-copy-button>
+            <svg class="icon icon-copy"><use href="assets/icons.svg#copy"/></svg>
+            <svg class="icon icon-check"><use href="assets/icons.svg#check"/></svg>
+          </button>
+        </div>
+        <div class="hero-actions reveal">
+          <a class="button button-primary" href="https://github.com/fatihsen-dev/nook/releases/latest/download/Nook.zip"><svg class="icon"><use href="assets/icons.svg#download"/></svg>Download for Mac</a>
+          <a class="button button-secondary" href="https://github.com/fatihsen-dev/nook"><svg class="icon"><use href="assets/icons.svg#github"/></svg>View on GitHub</a>
+        </div>
+        <p class="fineprint reveal">Universal · Apple Silicon and Intel · needs the Swift toolchain</p>
+      </div>
+      <picture class="hero-shot reveal">
+        <source media="(max-width: 640px)" srcset="assets/hero-mobile.webp" width="780" height="1200">
+        <source media="(max-width: 1100px)" srcset="assets/hero-tablet.webp" width="1668" height="1120">
+        <img src="assets/hero-desktop.webp" width="2880" height="1200" alt="The Nook manager with Clock, Now Playing and Mini Dock nooklets running on top of it">
+      </picture>
+    </section>
+
+    <section class="section" id="how-it-works">
+      <div class="container">
+        <div class="section-heading reveal">
+          <p class="kicker">How it works</p>
+          <h2>Three steps, no per-app setup.</h2>
+          <p>A nooklet is a regular Swift package. Nook takes care of building, running and keeping it alive.</p>
+        </div>
+        <ol class="steps">
+          <li class="card step reveal">
+            <span class="card-icon"><svg class="icon"><use href="assets/icons.svg#folder-plus"/></svg></span>
+            <div class="step-text">
+              <span class="step-number">Step 01</span>
+              <h3>Create</h3>
+              <p>Pick a folder and a name. Nook writes a starter package with nook.json and an entry file.</p>
+            </div>
+            <pre class="snippet"><span>nook.json</span><span>Package.swift</span><span>Sources/app.swift</span></pre>
+          </li>
+          <li class="card step reveal">
+            <span class="card-icon"><svg class="icon"><use href="assets/icons.svg#hammer"/></svg></span>
+            <div class="step-text">
+              <span class="step-number">Step 02</span>
+              <h3>Build</h3>
+              <p>Open it in Xcode, write SwiftUI or AppKit. Press Run and Nook builds a release binary.</p>
+            </div>
+            <pre class="snippet"><span class="faint">$ swift build -c release</span><span>Build complete! (4.2 s)</span></pre>
+          </li>
+          <li class="card step reveal">
+            <span class="card-icon"><svg class="icon"><use href="assets/icons.svg#infinity"/></svg></span>
+            <div class="step-text">
+              <span class="step-number">Step 03</span>
+              <h3>Forget it</h3>
+              <p>launchd keeps it running, starts it at login and restarts it after a crash. Close Nook, it stays.</p>
+            </div>
+            <pre class="snippet"><span><i class="live-dot"></i>Running · 14 MB</span><span>uptime 2h 14m</span></pre>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="features">
+      <div class="container">
+        <div class="section-heading reveal">
+          <p class="kicker">Why Nook</p>
+          <h2>Small on purpose.</h2>
+        </div>
+        <ul class="features">
+          <li class="card feature reveal"><svg class="icon"><use href="assets/icons.svg#paintbrush"/></svg><h3>Your design, all of it</h3><p>SwiftUI or AppKit, any shape. Nook draws no chrome around your panel.</p></li>
+          <li class="card feature reveal"><svg class="icon"><use href="assets/icons.svg#cpu"/></svg><h3>Native and light</h3><p>Compiled binaries, no web view, no interpreter. A clock uses about 9 MB.</p></li>
+          <li class="card feature reveal"><svg class="icon"><use href="assets/icons.svg#shield"/></svg><h3>One crash stays one crash</h3><p>Every nooklet is its own process, supervised by launchd.</p></li>
+          <li class="card feature reveal"><svg class="icon"><use href="assets/icons.svg#power"/></svg><h3>Outlives the manager</h3><p>Quit Nook and your nooklets keep running, even after a reboot.</p></li>
+          <li class="card feature reveal"><svg class="icon"><use href="assets/icons.svg#git-branch"/></svg><h3>Just a folder</h3><p>A nooklet is a Swift package. Put it in its own repo and share it.</p></li>
+          <li class="card feature reveal"><svg class="icon"><use href="assets/icons.svg#terminal"/></svg><h3>Logs and errors built in</h3><p>Live logs, build output and a jump to the failing line in Xcode.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="examples">
+      <div class="container">
+        <div class="section-heading reveal">
+          <p class="kicker">Write one</p>
+          <h2>This is the whole nooklet.</h2>
+          <p>A complete clock in fourteen lines. Everything else is up to you.</p>
+        </div>
+        <div class="example">
+          <figure class="editor reveal">
+            <figcaption class="editor-bar"><span class="lights"><i></i><i></i><i></i></span><span class="file-name">Sources/app.swift</span><button class="copy-chip" type="button" data-copy-code><svg class="icon"><use href="assets/icons.svg#copy"/></svg>Copy</button></figcaption>
+            <pre><code data-swift>import NookKit
+import SwiftUI
+
+@main
+struct Clock: Nooklet {
+    var body: some NookScene {
+        FloatingPanel(position: .topTrailing) {
+            TimelineView(.everyMinute) { context in
+                Text(context.date, style: .time)
+                    .font(.system(size: 56, weight: .semibold))
+            }
+        }
+    }
+}</code></pre>
+          </figure>
+          <div class="example-result reveal">
+            <div class="clock-widget">
+              <time class="clock-time" data-clock-time>22:48</time>
+              <span class="clock-date" data-clock-date>Tuesday, 28 October</span>
+            </div>
+            <p class="result-caption"><svg class="icon"><use href="assets/icons.svg#arrow-right"/></svg>on your desktop, after one click on Run</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="developers">
+      <div class="container">
+        <div class="section-heading reveal">
+          <p class="kicker">For developers</p>
+          <h2>Plain Swift. Plain macOS APIs.</h2>
+          <p>NookKit gives you a panel and a log. Everything else is the Swift and AppKit you already know. A few recipes to start from:</p>
+        </div>
+        <div class="recipes reveal" data-recipes>
+          <label class="recipe-select">
+            <span class="visually-hidden">Recipe</span>
+            <select data-recipe-select>
+              <option value="mini-dock">Mini dock · NSWorkspace</option>
+              <option value="now-playing">Now playing · Spotify</option>
+              <option value="battery">Battery · IOKit</option>
+              <option value="system-stats">System stats · host_statistics64</option>
+              <option value="logging">Logging · writeLog</option>
+            </select>
+            <svg class="icon"><use href="assets/icons.svg#chevrons-up-down"/></svg>
+          </label>
+          <div class="recipe-list" role="tablist" aria-label="Recipes">
+            <button class="recipe-tab" type="button" role="tab" aria-selected="true" aria-controls="recipe-mini-dock" data-recipe="mini-dock"><span class="card-icon"><svg class="icon"><use href="assets/icons.svg#panel-bottom"/></svg></span><span><strong>Mini dock</strong><small>Running apps with NSWorkspace</small></span></button>
+            <button class="recipe-tab" type="button" role="tab" aria-selected="false" aria-controls="recipe-now-playing" data-recipe="now-playing"><span class="card-icon"><svg class="icon"><use href="assets/icons.svg#music"/></svg></span><span><strong>Now playing</strong><small>Spotify notifications</small></span></button>
+            <button class="recipe-tab" type="button" role="tab" aria-selected="false" aria-controls="recipe-battery" data-recipe="battery"><span class="card-icon"><svg class="icon"><use href="assets/icons.svg#battery-medium"/></svg></span><span><strong>Battery</strong><small>IOKit power sources</small></span></button>
+            <button class="recipe-tab" type="button" role="tab" aria-selected="false" aria-controls="recipe-system-stats" data-recipe="system-stats"><span class="card-icon"><svg class="icon"><use href="assets/icons.svg#cpu"/></svg></span><span><strong>System stats</strong><small>Memory via host_statistics64</small></span></button>
+            <button class="recipe-tab" type="button" role="tab" aria-selected="false" aria-controls="recipe-logging" data-recipe="logging"><span class="card-icon"><svg class="icon"><use href="assets/icons.svg#scroll-text"/></svg></span><span><strong>Logging</strong><small>writeLog to the Log tab</small></span></button>
+          </div>
+          <div class="recipe-panels">
+            <figure class="editor recipe-panel is-active" role="tabpanel" id="recipe-mini-dock" data-panel="mini-dock">
+              <figcaption class="editor-bar"><span class="file-name">Sources/app.swift</span><button class="copy-chip" type="button" data-copy-code><svg class="icon"><use href="assets/icons.svg#copy"/></svg>Copy</button></figcaption>
+              <pre><code data-swift>import AppKit
+import NookKit
+import SwiftUI
+
+@main
+struct MiniDock: Nooklet {
+    var body: some NookScene {
+        FloatingPanel(position: .bottom) {
+            DockView()
+        }
+    }
+}
+
+struct DockView: View {
+    @State private var apps = NSWorkspace.shared.runningApplications
+        .filter { $0.activationPolicy == .regular }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(apps, id: \.processIdentifier) { app in
+                Image(nsImage: app.icon ?? NSImage())
+                    .resizable()
+                    .frame(width: 40, height: 40)
+                    .onTapGesture { app.activate() }
+            }
+        }
+        .padding(10)
+        .background(.ultraThinMaterial, in: Capsule())
+    }
+}</code></pre>
+            </figure>
+            <figure class="editor recipe-panel" role="tabpanel" id="recipe-now-playing" data-panel="now-playing" hidden>
+              <figcaption class="editor-bar"><span class="file-name">Sources/app.swift</span><button class="copy-chip" type="button" data-copy-code><svg class="icon"><use href="assets/icons.svg#copy"/></svg>Copy</button></figcaption>
+              <pre><code data-swift>import AppKit
+import NookKit
+import SwiftUI
+
+let spotifyChanged = Notification.Name("com.spotify.client.PlaybackStateChanged")
+
+@main
+struct NowPlaying: Nooklet {
+    var body: some NookScene {
+        FloatingPanel(position: .topLeading) {
+            TrackView()
+        }
+    }
+}
+
+struct TrackView: View {
+    @State private var title = "Nothing playing"
+    @State private var artist = ""
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(title).font(.headline)
+            Text(artist).foregroundStyle(.secondary)
+        }
+        .padding(16)
+        .onReceive(DistributedNotificationCenter.default()
+            .publisher(for: spotifyChanged)) { note in
+            title = note.userInfo?["Name"] as? String ?? title
+            artist = note.userInfo?["Artist"] as? String ?? artist
+        }
+    }
+}</code></pre>
+            </figure>
+            <figure class="editor recipe-panel" role="tabpanel" id="recipe-battery" data-panel="battery" hidden>
+              <figcaption class="editor-bar"><span class="file-name">Sources/app.swift</span><button class="copy-chip" type="button" data-copy-code><svg class="icon"><use href="assets/icons.svg#copy"/></svg>Copy</button></figcaption>
+              <pre><code data-swift>import IOKit.ps
+import NookKit
+import SwiftUI
+
+@main
+struct Battery: Nooklet {
+    var body: some NookScene {
+        FloatingPanel(level: .desktop, position: .bottomTrailing) {
+            TimelineView(.periodic(from: .now, by: 60)) { _ in
+                Gauge(value: Double(batteryLevel() ?? 0), in: 0...100) {
+                    Image(systemName: "battery.75percent")
+                }
+                .gaugeStyle(.accessoryCircularCapacity)
+                .padding(12)
+            }
+        }
+    }
+}
+
+func batteryLevel() -&gt; Int? {
+    let info = IOPSCopyPowerSourcesInfo().takeRetainedValue()
+    let sources = IOPSCopyPowerSourcesList(info).takeRetainedValue() as [CFTypeRef]
+    guard let source = sources.first,
+          let details = IOPSGetPowerSourceDescription(info, source)?
+              .takeUnretainedValue() as? [String: Any]
+    else { return nil }
+    return details[kIOPSCurrentCapacityKey] as? Int
+}</code></pre>
+            </figure>
+            <figure class="editor recipe-panel" role="tabpanel" id="recipe-system-stats" data-panel="system-stats" hidden>
+              <figcaption class="editor-bar"><span class="file-name">Sources/app.swift</span><button class="copy-chip" type="button" data-copy-code><svg class="icon"><use href="assets/icons.svg#copy"/></svg>Copy</button></figcaption>
+              <pre><code data-swift>import Darwin
+import NookKit
+import SwiftUI
+
+@main
+struct SystemStats: Nooklet {
+    var body: some NookScene {
+        FloatingPanel(position: .topTrailing) {
+            TimelineView(.periodic(from: .now, by: 2)) { _ in
+                Text("RAM \(usedMemory(), format: .byteCount(style: .memory))")
+                    .font(.system(.body, design: .monospaced))
+                    .padding(12)
+            }
+        }
+    }
+}
+
+func usedMemory() -&gt; Int64 {
+    var stats = vm_statistics64()
+    var count = mach_msg_type_number_t(
+        MemoryLayout&lt;vm_statistics64&gt;.size / MemoryLayout&lt;integer_t&gt;.size)
+    let result = withUnsafeMutablePointer(to: &amp;stats) {
+        $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+            host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &amp;count)
+        }
+    }
+    guard result == KERN_SUCCESS else { return 0 }
+    let pages = Int64(stats.active_count) + Int64(stats.wire_count)
+        + Int64(stats.compressor_page_count)
+    return pages * Int64(vm_kernel_page_size)
+}</code></pre>
+            </figure>
+            <figure class="editor recipe-panel" role="tabpanel" id="recipe-logging" data-panel="logging" hidden>
+              <figcaption class="editor-bar"><span class="file-name">Sources/app.swift</span><button class="copy-chip" type="button" data-copy-code><svg class="icon"><use href="assets/icons.svg#copy"/></svg>Copy</button></figcaption>
+              <pre><code data-swift>import NookKit
+import SwiftUI
+
+@main
+struct Pomodoro: Nooklet {
+    var body: some NookScene {
+        FloatingPanel(position: .center) {
+            TimerView()
+        }
+    }
+}
+
+struct TimerView: View {
+    @State private var isRunning = false
+
+    var body: some View {
+        Button(isRunning ? "Stop" : "Focus 25 min") {
+            isRunning.toggle()
+            writeLog(isRunning ? "focus started" : "focus stopped")
+        }
+        .padding(16)
+        .onAppear { writeLog("ready") }
+    }
+}</code></pre>
+            </figure>
+          </div>
+        </div>
+        <ul class="api">
+          <li class="card api-card reveal">
+            <h3>FloatingPanel</h3>
+            <p>A borderless panel. Users drag it anywhere, Nook remembers where.</p>
+            <pre class="snippet"><code data-swift>FloatingPanel(
+    level: .floating,
+    position: .topTrailing
+) { MyView() }</code></pre>
+          </li>
+          <li class="card api-card reveal">
+            <h3>PanelLevel · PanelPosition</h3>
+            <p>Desktop, normal or floating. Seven starting spots.</p>
+            <pre class="snippet"><code data-swift>level: .desktop | .normal | .floating
+position: .center | .top | .bottom
+    .topLeading | .topTrailing
+    .bottomLeading | .bottomTrailing</code></pre>
+          </li>
+          <li class="card api-card reveal">
+            <h3>writeLog</h3>
+            <p>Shows up live in the Log tab, with a timestamp.</p>
+            <pre class="snippet"><code data-swift>writeLog("now playing: \(title)")</code></pre>
+          </li>
+          <li class="card api-card reveal">
+            <h3>nook.json</h3>
+            <p>The identity Nook reads. That's the whole manifest.</p>
+            <pre class="snippet"><code data-json>{
+  "id": "dev.you.mini-dock",
+  "name": "Mini Dock",
+  "product": "MiniDock"
+}</code></pre>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="container">
+        <div class="cta-box reveal">
+          <h2>Make your first nooklet tonight.</h2>
+          <p>Free and open source. One command to install.</p>
+          <div class="install" data-copy-source>
+            <span class="install-prompt">$</span>
+            <code data-copy-text>curl -fsSL nook.fatihsen.dev/install.sh | sh</code>
+            <button class="copy-button" type="button" aria-label="Copy install command" data-copy-button>
+              <svg class="icon icon-copy"><use href="assets/icons.svg#copy"/></svg>
+              <svg class="icon icon-check"><use href="assets/icons.svg#check"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-left"><img src="assets/wordmark.svg" alt="Nook" width="45" height="22"><span>MIT licensed · made by Fatih Şen</span></div>
+      <nav class="footer-links">
+        <a href="https://github.com/fatihsen-dev/nook">GitHub</a>
+        <a href="https://github.com/fatihsen-dev/nook/releases">Releases</a>
+        <a href="https://github.com/fatihsen-dev/nook#readme">Docs</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
