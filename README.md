@@ -30,7 +30,7 @@ Build a clock, mini dock, now-playing panel, system monitor, timer, or any other
 curl -fsSL https://nook.fatihsen.dev/install.sh | sh
 ```
 
-The installer downloads the latest release, verifies its SHA-256 checksum and puts `Nook.app` in `~/Applications`. It also links the `nookctl` command-line tool into `~/.local/bin`. Set `NOOK_INSTALL_DIR` or `NOOK_BIN_DIR` to install somewhere else.
+The installer downloads the latest release, verifies its SHA-256 checksum and updates `Nook.app` where it already is (`/Applications` or `~/Applications`), or puts it in `~/Applications` on a first install. It also links the `nookctl` command-line tool into `~/.local/bin`. Set `NOOK_INSTALL_DIR` or `NOOK_BIN_DIR` to install somewhere else.
 
 Prefer a manual install? Download [`Nook.dmg`](https://github.com/fatihsen-dev/nook/releases/latest/download/Nook.dmg) (or [`Nook.zip`](https://github.com/fatihsen-dev/nook/releases/latest/download/Nook.zip)) from the latest release and drag `Nook.app` into Applications. Releases are signed with a Developer ID and notarized by Apple, so they open without a Gatekeeper warning.
 

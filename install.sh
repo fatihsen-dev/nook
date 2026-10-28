@@ -3,7 +3,8 @@ set -eu
 
 APP_NAME="Nook"
 RELEASES_URL="${NOOK_RELEASES_URL:-https://github.com/fatihsen-dev/nook/releases/latest/download}"
-INSTALL_DIR="${NOOK_INSTALL_DIR:-$HOME/Applications}"
+SYSTEM_APPLICATIONS_DIR="/Applications"
+USER_APPLICATIONS_DIR="$HOME/Applications"
 BIN_DIR="${NOOK_BIN_DIR:-$HOME/.local/bin}"
 COMMAND_LINE_NAME="nookctl"
 MINIMUM_MACOS_MAJOR=14
@@ -11,6 +12,28 @@ MINIMUM_MACOS_MAJOR=14
 log() { printf '  %s\n' "$1"; }
 err() { printf 'error: %s\n' "$1" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || err "this installer needs '$1'"; }
+
+find_install_dir() {
+    if [ -n "${NOOK_INSTALL_DIR:-}" ]; then
+        echo "$NOOK_INSTALL_DIR"
+        return
+    fi
+    for directory in "$SYSTEM_APPLICATIONS_DIR" "$USER_APPLICATIONS_DIR"; do
+        if [ -d "${directory}/${APP_NAME}.app" ]; then
+            echo "$directory"
+            return
+        fi
+    done
+    echo "$USER_APPLICATIONS_DIR"
+}
+
+warn_about_other_copies() {
+    for directory in "$SYSTEM_APPLICATIONS_DIR" "$USER_APPLICATIONS_DIR"; do
+        [ "$directory" != "$INSTALL_DIR" ] || continue
+        [ -d "${directory}/${APP_NAME}.app" ] || continue
+        log "another copy is still in ${directory}; delete ${directory}/${APP_NAME}.app so Spotlight shows one Nook"
+    done
+}
 
 main() {
     echo ""
@@ -23,6 +46,11 @@ main() {
     need curl
     need shasum
     need ditto
+
+    INSTALL_DIR="$(find_install_dir)"
+    if [ -d "$INSTALL_DIR" ] && [ ! -w "$INSTALL_DIR" ]; then
+        err "cannot write to ${INSTALL_DIR}; delete ${INSTALL_DIR}/${APP_NAME}.app or set NOOK_INSTALL_DIR to another folder"
+    fi
 
     tmp="$(mktemp -d)"
     trap 'rm -rf "$tmp"' EXIT
@@ -53,6 +81,7 @@ main() {
     mv "${tmp}/unpacked/${APP_NAME}.app" "${INSTALL_DIR}/${APP_NAME}.app"
     xattr -dr com.apple.quarantine "${INSTALL_DIR}/${APP_NAME}.app" 2>/dev/null || true
     log "installed ${INSTALL_DIR}/${APP_NAME}.app"
+    warn_about_other_copies
 
     command_line_tool="${INSTALL_DIR}/${APP_NAME}.app/Contents/MacOS/${COMMAND_LINE_NAME}"
     if [ -x "$command_line_tool" ]; then
