@@ -4,39 +4,57 @@ import NookCore
 import Testing
 @testable import NookSystem
 
-struct GitHubReleaseSourceTests {
-    let source = GitHubReleaseSource(feed: URL(filePath: "/unused"), archiveName: "Nook.zip", highlightLimit: 4)
+struct ReleaseManifestSourceTests {
+    let source = ReleaseManifestSource(feed: URL(filePath: "/unused"), highlightLimit: 4)
 
-    func releaseJSON(tag: String = "v0.1.4", assets: [String] = ["Nook.dmg", "Nook.zip", "Nook.zip.sha256"]) throws -> Data {
-        let release: [String: Any] = [
-            "tag_name": tag,
-            "html_url": "https://example.com/r/\(tag)",
-            "body": "## What's new\r\n- Add nookctl\r\n- Fix a crash\r\n\r\n**Full Changelog**: x",
-            "assets": assets.map { ["name": $0, "browser_download_url": "https://example.com/d/\($0)"] },
+    func manifestJSON(version: String = "0.1.6") throws -> Data {
+        let manifest: [String: Any] = [
+            "version": version,
+            "notes": "## What's new\n\n- Add nookctl\n- Fix a crash\n\n**Full changelog**: x",
+            "page": "https://example.com/r/v0.1.6",
+            "archive": "https://example.com/d/Nook.zip",
+            "checksum": "https://example.com/d/Nook.zip.sha256",
         ]
-        return try JSONSerialization.data(withJSONObject: release)
+        return try JSONSerialization.data(withJSONObject: manifest)
     }
 
     @Test func readsVersionNotesAndArchive() throws {
-        let release = try source.parseRelease(try releaseJSON())
-        #expect(release.version == AppVersion("0.1.4"))
+        let release = try source.parseManifest(try manifestJSON())
+        #expect(release.version == AppVersion("0.1.6"))
         #expect(release.highlights == ["Add nookctl", "Fix a crash"])
-        #expect(release.page == URL(string: "https://example.com/r/v0.1.4"))
+        #expect(release.page == URL(string: "https://example.com/r/v0.1.6"))
         #expect(release.archive == ReleaseArchive(
             url: URL(string: "https://example.com/d/Nook.zip")!,
             checksumURL: URL(string: "https://example.com/d/Nook.zip.sha256")!))
     }
 
-    @Test func releaseWithoutChecksumIsRejected() {
-        #expect(throws: AppUpdateError.missingAsset("Nook.zip.sha256")) {
-            try source.parseRelease(try releaseJSON(assets: ["Nook.zip"]))
+    @Test func versionThatIsNotAVersionNumberIsRejected() {
+        #expect(throws: AppUpdateError.invalidReleaseVersion("nightly")) {
+            try source.parseManifest(try manifestJSON(version: "nightly"))
         }
     }
 
-    @Test func tagThatIsNotAVersionIsRejected() {
-        #expect(throws: AppUpdateError.invalidReleaseVersion("nightly")) {
-            try source.parseRelease(try releaseJSON(tag: "nightly"))
+    @Test func manifestWithoutAnArchiveIsRejected() {
+        #expect(throws: AppUpdateError.self) {
+            try source.parseManifest(Data(#"{"version":"0.1.6","notes":"","page":"https://example.com"}"#.utf8))
         }
+    }
+}
+
+struct HTTPStatusTests {
+    let url = URL(string: "https://example.com/latest.json")!
+
+    func response(_ status: Int) -> HTTPURLResponse {
+        HTTPURLResponse(url: url, statusCode: status, httpVersion: nil, headerFields: nil)!
+    }
+
+    @Test func rateLimitStatusesSayTheServerIsLimitingRequests() {
+        #expect(throws: AppUpdateError.rateLimited(url.host() ?? "")) { try requireSuccess(response(403), for: url) }
+        #expect(throws: AppUpdateError.rateLimited(url.host() ?? "")) { try requireSuccess(response(429), for: url) }
+    }
+
+    @Test func otherFailuresNameTheStatus() {
+        #expect(throws: AppUpdateError.downloadFailed(url.absoluteString, 404)) { try requireSuccess(response(404), for: url) }
     }
 }
 

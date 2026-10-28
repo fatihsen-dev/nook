@@ -85,7 +85,7 @@ private struct UpdateCard: View {
             UpdateHeader(icon: "exclamationmark.triangle", tone: .danger,
                          title: release == nil ? "Nook could not check for updates" : "The update could not be installed",
                          message: release == nil
-                            ? "Check your internet connection and try again."
+                            ? "Nook checks again later on its own. You can also try now."
                             : "Nook \(current) is unchanged and still works. You can try again later or download the new version yourself.")
             Text(reason)
                 .font(.system(size: 12, design: .monospaced))

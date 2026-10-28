@@ -4,7 +4,6 @@ import NookCore
 let updateFeedVariable = "NOOK_UPDATE_FEED"
 let updateFeedInfoKey = "NookUpdateFeed"
 let bundleVersionInfoKey = "CFBundleShortVersionString"
-let updateArchiveName = "Nook.zip"
 let releaseHighlightLimit = 4
 let updateStagingDirectoryName = "nook-update"
 let dittoExecutable = URL(filePath: "/usr/bin/ditto")
@@ -62,7 +61,7 @@ public enum UpdateConfigurationError: Error, Equatable, LocalizedError {
 public func makeAppUpdater(configuration: UpdateConfiguration) -> AppUpdater {
     AppUpdater(
         currentVersion: configuration.currentVersion,
-        source: GitHubReleaseSource(feed: configuration.feed, archiveName: updateArchiveName, highlightLimit: releaseHighlightLimit),
+        source: ReleaseManifestSource(feed: configuration.feed, highlightLimit: releaseHighlightLimit),
         downloader: URLSessionUpdateDownloader(stagingDirectory: FileManager.default.temporaryDirectory.appending(path: updateStagingDirectoryName)),
         replacer: InPlaceAppBundleReplacer(appBundle: configuration.appBundle, bundleIdentifier: configuration.bundleIdentifier, ditto: dittoExecutable))
 }

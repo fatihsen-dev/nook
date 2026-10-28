@@ -88,9 +88,10 @@ public enum AppUpdateError: Error, Equatable, LocalizedError {
     case notReplaceableInPlace
     case checksumMismatch(expected: String, actual: String)
     case unreadableChecksum(String)
-    case missingAsset(String)
+    case unreadableManifest(String, String)
     case invalidReleaseVersion(String)
     case downloadFailed(String, Int)
+    case rateLimited(String)
     case unsignedCurrentCopy
     case untrustedSignature(String)
     case missingAppInArchive(String)
@@ -104,10 +105,12 @@ public enum AppUpdateError: Error, Equatable, LocalizedError {
             "The download does not match its checksum (expected \(expected), got \(actual))."
         case .unreadableChecksum(let text):
             "The release checksum file is not a SHA-256 value: \(text)"
-        case .missingAsset(let name):
-            "The latest release has no \(name) file."
+        case .unreadableManifest(let url, let reason):
+            "The release information at \(url) could not be read: \(reason)"
         case .invalidReleaseVersion(let tag):
             "The latest release tag \(tag) is not a version number."
+        case .rateLimited(let host):
+            "\(host) is limiting requests from this network right now. Nook will check again later."
         case .downloadFailed(let url, let status):
             "Downloading \(url) failed with HTTP status \(status)."
         case .unsignedCurrentCopy:
