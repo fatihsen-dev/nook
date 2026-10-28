@@ -494,6 +494,19 @@ h1 {
   gap: 10px;
 }
 
+.fineprint a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+  transition: color var(--fast) ease, text-decoration-color var(--fast) ease;
+}
+
+.fineprint a:hover {
+  color: var(--lime);
+  text-decoration-color: var(--lime);
+}
+
 .fineprint {
   color: var(--faint);
   font-size: 12px;
