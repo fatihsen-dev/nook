@@ -93,6 +93,26 @@ struct NookletTemplateTests {
         #expect(try NookletManifest.decode(from: Data(manifestFile.utf8)) == manifest)
     }
 
+    @Test func agentGuideExplainsTheBuildLoopAndPointsAtTheLocalSkill() {
+        let guide = makeTemplateFiles(for: manifest, dependency: .localPath("/Users/me/nook"))["AGENTS.md"] ?? ""
+        #expect(guide.contains("Now Playing"))
+        #expect(guide.contains("nookctl build ."))
+        #expect(guide.contains("nookctl run ."))
+        #expect(guide.contains("nookctl logs ."))
+        #expect(guide.contains("/Applications/Nook.app/Contents/MacOS/nookctl"))
+        #expect(guide.contains("~/.local/bin/nookctl"))
+        #expect(guide.contains("nookctl add ."))
+        #expect(guide.contains("nookctl list --json"))
+        #expect(guide.contains("/Users/me/nook/skills/nook/SKILL.md"))
+    }
+
+    @Test func agentGuidePointsAtTheSkillOfTheReleaseItDependsOn() throws {
+        let url = try #require(URL(string: "https://github.com/me/nook"))
+        let dependency = NookKitDependency.remote(url, version: try #require(AppVersion("0.1.6")))
+        let guide = makeTemplateFiles(for: manifest, dependency: dependency)["AGENTS.md"] ?? ""
+        #expect(guide.contains("`skills/nook/SKILL.md` in https://github.com/me/nook at tag `v0.1.6`"))
+    }
+
     @Test func ignoresBuildDirectory() {
         let ignoreFile = makeTemplateFiles(for: manifest, dependency: .localPath("/n"))[".gitignore"] ?? ""
         #expect(ignoreFile.contains(".build/"))
@@ -102,10 +122,18 @@ struct NookletTemplateTests {
 struct ScaffoldNookletTests {
     let manifest = NookletManifest(id: "com.example.clock", name: "Clock", product: "Clock")
 
+    @Test func keepsAnAgentGuideThatIsAlreadyThere() throws {
+        let directory = try makeTemporaryDirectory()
+        try Data("my own rules".utf8).write(to: directory.appending(path: "AGENTS.md"))
+        try scaffoldNooklet(manifest, dependency: .localPath("/n"), in: directory)
+        #expect(try String(contentsOf: directory.appending(path: "AGENTS.md"), encoding: .utf8) == "my own rules")
+        #expect(FileManager.default.fileExists(atPath: directory.appending(path: "Package.swift").path))
+    }
+
     @Test func writesTemplateFilesIntoDirectory() throws {
         let directory = try makeTemporaryDirectory()
         try scaffoldNooklet(manifest, dependency: .localPath("/n"), in: directory)
-        for path in ["Package.swift", "Sources/app.swift", manifestFileName, ".gitignore"] {
+        for path in ["Package.swift", "Sources/app.swift", manifestFileName, ".gitignore", "AGENTS.md"] {
             #expect(FileManager.default.fileExists(atPath: directory.appending(path: path).path))
         }
     }
