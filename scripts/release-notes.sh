@@ -4,7 +4,7 @@ set -eu
 usage="usage: release-notes.sh <tag> <repository-url>
 
 Prints release notes for <tag>: one bullet per feat, fix or perf commit since the previous tag,
-skipping commits scoped to the website, then a link to the full comparison."
+skipping commits scoped to the website or ci and dropping pull request numbers, then a link to the full comparison."
 [ "$#" -eq 2 ] || { echo "$usage" >&2; exit 64; }
 
 tag="$1"
@@ -15,10 +15,11 @@ previous_tag="$(git describe --tags --abbrev=0 "$tag^" 2>/dev/null || true)"
 range="$tag"
 [ -z "$previous_tag" ] || range="$previous_tag..$tag"
 
-# Matches a feat, fix or perf subject with an optional scope other than website, and captures the description
+# Matches a feat, fix or perf subject with an optional scope other than website or ci, and captures the description
 subject_pattern='^(feat|fix|perf)(\(([^)]*)\))?!?: (.+)$'
 
-highlights="$(git log --no-merges --format=%s "$range" | sed -nE "/^(feat|fix|perf)\\(website\\)/d; s/$subject_pattern/\\4/p" | awk '{ print "- " toupper(substr($0, 1, 1)) substr($0, 2) }')"
+# The second sed matches a trailing pull request reference such as " (#12)"
+highlights="$(git log --no-merges --format=%s "$range" | sed -nE "/^(feat|fix|perf)\\((website|ci)\\)/d; s/$subject_pattern/\\4/p" | sed -E 's/ \(#[0-9]+\)$//' | awk '{ print "- " toupper(substr($0, 1, 1)) substr($0, 2) }')"
 
 if [ -n "$highlights" ]; then
     echo "## What's new"
