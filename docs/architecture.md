@@ -59,6 +59,7 @@ Data lives under `~/Library/Application Support/Nook/` (`library.json`, `logs/<n
 ├── nook.json
 ├── Package.swift        # depends on the package identity "nook", product "NookKit"
 ├── .gitignore
+├── AGENTS.md            # build loop for AI agents and the location of the Nook skill; never overwrites an existing one
 └── Sources/app.swift    # @main type conforming to Nooklet
 ```
 

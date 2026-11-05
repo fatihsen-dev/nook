@@ -111,7 +111,7 @@ nookctl list --json                              # status, pid and memory of eve
 
 A nooklet is referred to by its id or its folder. `build`, `run` and `list` take `--json`, and a failed build exits with status 1, so an AI coding agent can write a nooklet, build it, fix the reported errors and check the log on its own. The Nook window shows these changes within a few seconds. Run `nookctl help` for every command.
 
-To teach an agent about Nook, give it the skill in [`skills/nook`](skills/nook/SKILL.md): it covers the nooklet layout, the NookKit API and this workflow, with compiling recipes. Copy the folder into your agent's skills directory (for Claude Code, `~/.claude/skills/nook`). The website also serves a summary for language models at [nook.fatihsen.dev/llms.txt](https://nook.fatihsen.dev/llms.txt).
+Every new nooklet gets an `AGENTS.md` that most coding agents read on their own: it explains the `nookctl` build loop and where the full skill is. For more, give the agent the skill in [`skills/nook`](skills/nook/SKILL.md): it covers the nooklet layout, the NookKit API and this workflow, with compiling recipes. Copy the folder into your agent's skills directory (for Claude Code, `~/.claude/skills/nook`). The website also serves a summary for language models at [nook.fatihsen.dev/llms.txt](https://nook.fatihsen.dev/llms.txt).
 
 ## Nooklet lifecycle
 

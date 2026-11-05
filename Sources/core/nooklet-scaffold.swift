@@ -6,6 +6,8 @@ let nookKitRemoteBranch = "main"
 let packageManifestFileName = "Package.swift"
 let entryFilePath = "Sources/app.swift"
 let gitIgnoreFileName = ".gitignore"
+let agentGuideFileName = "AGENTS.md"
+let nookSkillPath = "skills/nook/SKILL.md"
 let minimumMacOSVersion = "v14"
 
 public enum NookKitDependency: Equatable, Sendable {
@@ -64,6 +66,7 @@ public func makeTemplateFiles(for manifest: NookletManifest, dependency: NookKit
         packageManifestFileName: makePackageManifestFile(for: manifest, dependency: dependency),
         entryFilePath: makeEntryFile(for: manifest),
         gitIgnoreFileName: ".build/\n.swiftpm/\n.DS_Store\n",
+        agentGuideFileName: makeAgentGuide(for: manifest, dependency: dependency),
     ]
 }
 
@@ -75,6 +78,9 @@ public func scaffoldNooklet(_ manifest: NookletManifest, dependency: NookKitDepe
     }
     for (relativePath, contents) in makeTemplateFiles(for: manifest, dependency: dependency) {
         let fileURL = directory.appending(path: relativePath)
+        if relativePath == agentGuideFileName && fileManager.fileExists(atPath: fileURL.path) {
+            continue
+        }
         try fileManager.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data(contents.utf8).write(to: fileURL)
     }
@@ -100,6 +106,43 @@ private func makePackageManifestFile(for manifest: NookletManifest, dependency: 
             .executableTarget(name: \(product), dependencies: [.product(name: \(swiftStringLiteral(nookKitProductName)), package: \(swiftStringLiteral(nookKitPackageIdentity)))], path: "Sources"),
         ]
     )
+
+    """
+}
+
+private func makeAgentGuide(for manifest: NookletManifest, dependency: NookKitDependency) -> String {
+    let skillLocation = switch dependency {
+    case .localPath(let path):
+        "`\(URL(filePath: path).appending(path: nookSkillPath).path)`"
+    case .remote(let url, let version):
+        "`\(nookSkillPath)` in \(url.absoluteString) at tag `v\(version)`"
+    }
+    return """
+    # \(manifest.name)
+
+    This folder is a nooklet: a small native macOS app that Nook builds, installs and keeps running with launchd. \
+    `Sources/app.swift` holds a `@main` type conforming to `Nooklet` from NookKit; its UI is free SwiftUI or AppKit, \
+    and its features come from ordinary macOS APIs.
+
+    Before writing code, read the Nook agent skill (location below): it lists the whole NookKit API and the macOS \
+    behaviour nooklets run into.
+
+    ## Build loop
+
+    Use `nookctl` from this folder. If it is not on `PATH`, it is at `~/.local/bin/nookctl`, \
+    `/Applications/Nook.app/Contents/MacOS/nookctl` or `~/Applications/Nook.app/Contents/MacOS/nookctl`.
+
+    1. `nookctl build .` compiles without starting it. Errors print as `<file>:<line>:<column>: error: <message>` and the command exits with 1; fix every error and build again.
+    2. `nookctl run .` builds, installs and starts it, or restarts it with the new build.
+    3. `nookctl logs . --lines 50` shows its log; `writeLog(_:)` and `print` land there. NookKit itself writes `started (pid N)` and `panel placed at x, y`; lines after those come from this code.
+    4. `nookctl list --json` shows whether it is running; `nookctl stop .` stops it; `nookctl remove .` takes it out of Nook and keeps this folder.
+
+    These commands work on nooklets in Nook's library. Nook adds a nooklet it creates; add a copied folder with `nookctl add .` first. \
+    Keep the NookKit dependency in `Package.swift` and the id in `\(manifestFileName)` unchanged.
+
+    ## Reference
+
+    The full NookKit API, macOS pitfalls and compiling recipes are in the Nook agent skill: \(skillLocation).
 
     """
 }
