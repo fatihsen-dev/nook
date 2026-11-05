@@ -60,6 +60,24 @@ public func makeProductName(from displayName: String) throws -> String {
     return productName
 }
 
+public enum NookletTemplateFile: CaseIterable, Sendable {
+    case manifest
+    case package
+    case entry
+    case gitIgnore
+    case agentGuide
+
+    public var path: String {
+        switch self {
+        case .manifest: manifestFileName
+        case .package: packageManifestFileName
+        case .entry: entryFilePath
+        case .gitIgnore: gitIgnoreFileName
+        case .agentGuide: agentGuideFileName
+        }
+    }
+}
+
 public func makeTemplateFiles(for manifest: NookletManifest, dependency: NookKitDependency) -> [String: String] {
     [
         manifestFileName: makeManifestFile(for: manifest),
