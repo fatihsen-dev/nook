@@ -113,6 +113,11 @@ struct NookletTemplateTests {
         #expect(guide.contains("`skills/nook/SKILL.md` in https://github.com/me/nook at tag `v0.1.6`"))
     }
 
+    @Test func everyTemplateFileIsListed() {
+        let written = Set(makeTemplateFiles(for: manifest, dependency: .localPath("/n")).keys)
+        #expect(Set(NookletTemplateFile.allCases.map(\.path)) == written)
+    }
+
     @Test func ignoresBuildDirectory() {
         let ignoreFile = makeTemplateFiles(for: manifest, dependency: .localPath("/n"))[".gitignore"] ?? ""
         #expect(ignoreFile.contains(".build/"))

@@ -89,11 +89,11 @@ struct NewNookletSheet: View {
     private var filesPreview: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("WILL CREATE").font(.system(size: 11, weight: .bold)).tracking(1.2).foregroundStyle(Theme.faint)
-            ForEach([("nook.json", "name and identifier"), ("Package.swift", "depends on NookKit"), ("Sources/app.swift", "your nooklet starts here")], id: \.0) { file, note in
+            ForEach(NookletTemplateFile.allCases, id: \.path) { file in
                 HStack(spacing: 10) {
                     Image(systemName: "doc.text").font(.system(size: 12)).foregroundStyle(Theme.muted)
-                    Text(file).font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.text)
-                    Text(note).font(.system(size: 12)).foregroundStyle(Theme.faint)
+                    Text(file.path).font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.text)
+                    Text(file.note).font(.system(size: 12)).foregroundStyle(Theme.faint)
                 }
             }
         }
@@ -111,6 +111,18 @@ struct NewNookletSheet: View {
             Task { await model.run(nooklet) }
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+}
+
+extension NookletTemplateFile {
+    var note: String {
+        switch self {
+        case .manifest: "name and identifier"
+        case .package: "depends on NookKit"
+        case .entry: "your nooklet starts here"
+        case .gitIgnore: "keeps build output out of git"
+        case .agentGuide: "guide for AI coding agents"
         }
     }
 }
